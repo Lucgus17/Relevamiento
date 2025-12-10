@@ -1,0 +1,60 @@
+textarea {
+    resize: none;
+    font-size: 15px;
+}
+
+input {
+    font-size: 16px;
+}
+
+/* ✅ FONDO ANIMADO TIPO ESCÁNER */
+.bg-animado {
+    min-height: 100vh;
+    background: radial-gradient(circle at center, #0f172a, #020617);
+    overflow: hidden;
+    position: relative;
+}
+
+.bg-animado::before {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 250%;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(0, 255, 255, 0.12) 45%,
+        rgba(0, 255, 255, 0.25) 50%,
+        rgba(0, 255, 255, 0.12) 55%,
+        transparent 100%
+    );
+    animation: scan 6s linear infinite;
+}
+
+@keyframes scan {
+    0% {
+        top: -120%;
+    }
+    100% {
+        top: 120%;
+    }
+}
+/* ✅ BOTÓN EFECTO GLOW */
+.btn-success {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+    box-shadow: 0 0 15px rgba(0, 255, 120, 0.8),
+                0 0 30px rgba(0, 255, 120, 0.6);
+    transform: scale(1.03);
+}
+/* Reducir el tamaño del input dentro del formulario de agregar serial */
+.card form input.form-control {
+    max-width: 1150px;   /* Ajustalo a gusto */
+    flex-grow: 0;       /* Evita que se expanda */
+}
