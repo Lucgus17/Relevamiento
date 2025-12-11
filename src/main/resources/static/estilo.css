@@ -1,3 +1,5 @@
+/* ============================= */
+/* 🔹 TEXTAREAS E INPUTS 🔹 */
 textarea {
     resize: none;
     font-size: 15px;
@@ -7,7 +9,8 @@ input {
     font-size: 16px;
 }
 
-/* ✅ FONDO ANIMADO TIPO ESCÁNER */
+/* ============================= */
+/* 🔹 FONDO ANIMADO TIPO ESCÁNER 🔹 */
 .bg-animado {
     min-height: 100vh;
     background: radial-gradient(circle at center, #0f172a, #020617);
@@ -31,17 +34,16 @@ input {
         transparent 100%
     );
     animation: scan 6s linear infinite;
+    z-index: 0;
 }
 
 @keyframes scan {
-    0% {
-        top: -120%;
-    }
-    100% {
-        top: 120%;
-    }
+    0% { top: -120%; }
+    100% { top: 120%; }
 }
-/* ✅ BOTÓN EFECTO GLOW */
+
+/* ============================= */
+/* 🔹 BOTONES CON EFECTO GLOW 🔹 */
 .btn-success {
     position: relative;
     overflow: hidden;
@@ -49,25 +51,93 @@ input {
 }
 
 .btn-success:hover {
-    box-shadow: 0 0 15px rgba(0, 255, 120, 0.8),
-                0 0 30px rgba(0, 255, 120, 0.6);
-    transform: scale(1.03);
-}
-/* Reducir el tamaño del input dentro del formulario de agregar serial */
-.card form input.form-control {
-    max-width: 1150px;   /* Ajustalo a gusto */
-    flex-grow: 0;       /* Evita que se expanda */
+    box-shadow: 0 0 20px rgba(0, 255, 120, 0.9),
+                0 0 40px rgba(0, 255, 120, 0.7);
+    transform: scale(1.05);
 }
 
-/* Oculta el tachito hasta hover */
+/* ============================= */
+/* 🔹 FORMULARIO DE AGREGAR SERIAL 🔹 */
+.card form input.form-control {
+    max-width: 1150px;
+    flex-grow: 0;
+}
+
+/* ============================= */
+/* 🔹 TACHITOS 🔹 */
 .list-group-item .btn-trash {
     opacity: 0;
     pointer-events: none;
     transition: opacity .25s ease;
 }
 
-/* Cuando se pasa el mouse, aparece el tachito */
 .list-group-item:hover .btn-trash {
     opacity: 1;
     pointer-events: auto;
+}
+
+/* ============================= */
+/* 🔹 SERIAL RECIÉN AGREGADO - ENCONTRADOS 🔹 */
+.recien-agregado {
+    position: relative;
+    border-left: 5px solid #ed053f;
+    background-color: #1a1a1a;
+    z-index: 1;
+    overflow: visible;
+}
+
+.recien-agregado::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: transparent;
+    box-shadow: 0 0 0 #ed053f;
+    animation: lucesDestello 2.5s ease-out forwards;
+    z-index: 2;
+}
+
+@keyframes lucesDestello {
+    0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
+    20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
+    40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
+    60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
+    80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
+    100% { box-shadow: 0 0 0 #ed053f; }
+}
+
+/* ============================= */
+/* 🔹 SERIAL RECIÉN AGREGADO - NO INVENTARIADOS 🔹 */
+.recien-agregado-sobrante {
+    position: relative;
+    border-left: 5px solid #ed053f;
+    background-color: #1a1a1a;
+    z-index: 1;
+    overflow: visible;
+}
+
+.recien-agregado-sobrante::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: transparent;
+    box-shadow: 0 0 0 #ed053f;
+    animation: lucesDestelloSobrante 2.5s ease-out forwards;
+    z-index: 2;
+}
+
+@keyframes lucesDestelloSobrante {
+    0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
+    20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
+    40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
+    60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
+    80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
+    100% { box-shadow: 0 0 0 #ed053f; }
 }

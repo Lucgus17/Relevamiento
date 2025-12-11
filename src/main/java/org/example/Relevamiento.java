@@ -20,7 +20,7 @@ public class Relevamiento {
         if (!numeroSerialSobrante.contains(n) &&
                 !numeroSerialEncontrado.contains(n)) {
 
-            numeroSerialSobrante.add(n);
+            numeroSerialSobrante.add(0, n); // agregar arriba
         }
     }
 
@@ -54,7 +54,7 @@ public class Relevamiento {
         for (int i = 0; i < numeroSerialEsperado.size(); i++) {
             if (numeroSerialEsperado.get(i).equals(serial)) {
 
-                numeroSerialEncontrado.add(0, serial); // ← mostrar arriba del todo
+                numeroSerialEncontrado.add(0, serial); // aparecer arriba
                 numeroSerialEsperado.remove(i);
 
                 return null;
@@ -65,7 +65,7 @@ public class Relevamiento {
         if (sugerencia != null) return sugerencia;
 
         if (!numeroSerialSobrante.contains(serial)) {
-            numeroSerialSobrante.add(serial);
+            numeroSerialSobrante.add(0, serial); // aparecer arriba
         }
 
         return null;
@@ -73,23 +73,23 @@ public class Relevamiento {
 
     private String buscarSerialParecido(String serialIngresado) {
         for (String esperado : numeroSerialEsperado) {
-            int dif = distancia( serialIngresado, esperado );
+            int dif = distancia(serialIngresado, esperado);
             if (dif <= 2) return esperado;
         }
         return null;
     }
 
     private int distancia(String a, String b) {
-        int[][] dp = new int[a.length()+1][b.length()+1];
+        int[][] dp = new int[a.length() + 1][b.length() + 1];
 
-        for (int i=0;i<=a.length();i++) dp[i][0]=i;
-        for (int j=0;j<=b.length();j++) dp[0][j]=j;
+        for (int i = 0; i <= a.length(); i++) dp[i][0] = i;
+        for (int j = 0; j <= b.length(); j++) dp[0][j] = j;
 
-        for (int i=1;i<=a.length();i++){
-            for(int j=1;j<=b.length();j++){
-                if(a.charAt(i-1)==b.charAt(j-1)) dp[i][j]=dp[i-1][j-1];
-                else dp[i][j]=1 + Math.min(dp[i-1][j-1],
-                        Math.min(dp[i-1][j], dp[i][j-1]));
+        for (int i = 1; i <= a.length(); i++) {
+            for (int j = 1; j <= b.length(); j++) {
+                if (a.charAt(i - 1) == b.charAt(j - 1)) dp[i][j] = dp[i - 1][j - 1];
+                else dp[i][j] = 1 + Math.min(dp[i - 1][j - 1],
+                        Math.min(dp[i - 1][j], dp[i][j - 1]));
             }
         }
         return dp[a.length()][b.length()];
@@ -104,18 +104,18 @@ public class Relevamiento {
     }
 
     public List<String> getNumeroSerialEsperado() { return numeroSerialEsperado; }
+
     public List<String> getNumeroSerialEncontrado() {
-        List<String> lista = new ArrayList<>(numeroSerialEncontrado);
-        Collections.reverse(lista);
-        return lista;
+        return new ArrayList<>(numeroSerialEncontrado); // ya no se invierte
     }
 
-    public List<String> getNumeroSerialSobrante() { return numeroSerialSobrante; }
+    public List<String> getNumeroSerialSobrante() {
+        return new ArrayList<>(numeroSerialSobrante); // ya no se invierte
+    }
 
     public void eliminar(String serial) {
         serial = normalize(serial);
         numeroSerialEncontrado.remove(serial);
         numeroSerialSobrante.remove(serial);
     }
-
 }
