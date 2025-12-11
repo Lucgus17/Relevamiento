@@ -6,17 +6,57 @@
 
     <!-- BOOTSTRAP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- BOOTSTRAP ICONS (tachitos) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
     <!-- CSS personalizado -->
     <link th:href="@{/estilo.css}" rel="stylesheet">
+
+    <style>
+        /* Animación suave del modal */
+        .modal.fade .modal-dialog {
+            transform: translateY(-30px);
+            transition: all .35s ease-out;
+        }
+        .modal.show .modal-dialog {
+            transform: translateY(0);
+        }
+
+        /* Tachito estilo icono */
+        .btn-trash {
+            background: transparent;
+            border: none;
+            color: #ff4d4d;
+            font-size: 20px;
+        }
+
+        .btn-trash:hover {
+            color: red;
+            transform: scale(1.2);
+        }
+
+        /* 🔥 Ocultar el tachito hasta hover */
+        .list-group-item .btn-trash {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s ease;
+        }
+        .list-group-item:hover .btn-trash {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+
 </head>
 
 <body class="bg-dark text-light">
-
 <div class="container mt-4">
 
     <!-- CABECERA -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="text-warning">Relevamiento de Seriales</h1>
+
         <form method="post" action="/finalizar">
             <button class="btn btn-danger">Finalizar Sesión</button>
         </form>
@@ -37,29 +77,32 @@
     <div class="card bg-dark border-warning mb-4">
         <div class="card-body">
             <h4 class="text-warning">Ingresar Número de Serie</h4>
+
             <form method="post" action="/agregar-serial" class="d-flex gap-3">
-                <input type="text"
-                       id="serialInput"
-                       name="serial"
-                       class="form-control"
-                       placeholder="Ingresar número de serie"
-                       required
-                       autofocus>
+                <input type="text" id="serialInput" name="serial" class="form-control"
+                       placeholder="Ingresar número de serie" required autofocus>
                 <button class="btn btn-success">Agregar</button>
             </form>
         </div>
     </div>
 
-    <!-- LOS 3 CUADROS -->
+    <!-- FILAS DE LISTAS -->
     <div class="row">
 
         <!-- TODOS -->
         <div class="col-md-4 mb-4">
             <div class="card bg-secondary text-white h-100">
                 <div class="card-header text-center bg-primary">TODOS LOS SERIALES</div>
-                <div class="card-body">
-                    <textarea class="form-control h-100" rows="15" readonly th:text="${todosLosSeriales}"></textarea>
+
+                <div class="card-body" style="overflow-y:auto; max-height:400px;">
+                    <ul class="list-group">
+                        <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center"
+                            th:each="s : ${todosLosSeriales}">
+                            <span th:text="${s}"></span>
+                        </li>
+                    </ul>
                 </div>
+
                 <div class="p-3">
                     <p><strong>Total esperados:</strong> <span th:text="${conteos.esperados}"></span></p>
                 </div>
@@ -70,9 +113,24 @@
         <div class="col-md-4 mb-4">
             <div class="card bg-secondary text-white h-100">
                 <div class="card-header text-center bg-success">ENCONTRADOS</div>
-                <div class="card-body">
-                    <textarea class="form-control h-100" rows="15" readonly th:text="${encontrados}"></textarea>
+
+                <div class="card-body" style="overflow-y:auto; max-height:400px;">
+                    <ul class="list-group">
+                        <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center"
+                            th:each="s : ${encontrados}">
+                            <span th:text="${s}"></span>
+
+                            <!-- TACHITO BONITO -->
+                            <button class="btn-trash"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminar"
+                                    th:attr="data-serial=${s}">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </li>
+                    </ul>
                 </div>
+
                 <div class="p-3">
                     <p><strong>Total encontrados:</strong> <span th:text="${conteos.encontrados}"></span></p>
                 </div>
@@ -83,9 +141,24 @@
         <div class="col-md-4 mb-4">
             <div class="card bg-secondary text-white h-100">
                 <div class="card-header text-center bg-danger">NO INVENTARIADOS</div>
-                <div class="card-body">
-                    <textarea class="form-control h-100" rows="15" readonly th:text="${sobrantes}"></textarea>
+
+                <div class="card-body" style="overflow-y:auto; max-height:400px;">
+                    <ul class="list-group">
+                        <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center"
+                            th:each="s : ${sobrantes}">
+                            <span th:text="${s}"></span>
+
+                            <!-- TACHITO -->
+                            <button class="btn-trash"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminar"
+                                    th:attr="data-serial=${s}">
+                                <i class="bi bi-trash3-fill"></i>
+                            </button>
+                        </li>
+                    </ul>
                 </div>
+
                 <div class="p-3">
                     <p><strong>Total no inventariados:</strong> <span th:text="${conteos.sobrantes}"></span></p>
                 </div>
@@ -93,44 +166,104 @@
         </div>
 
     </div>
-
 </div>
 
-<!-- MODAL DE SUGERENCIA -->
+<!-- ===================================================== -->
+<!--  MODAL ELIMINAR -->
+<!-- ===================================================== -->
+
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Eliminar Serial</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar el siguiente serial?</p>
+
+                <h4 class="text-warning text-center">
+                    <span id="serialAEliminar"></span>
+                </h4>
+            </div>
+
+            <div class="modal-footer">
+
+                <form method="get" action="/eliminar">
+
+                <!-- ID CORRECTO -->
+                    <input type="hidden" name="serial" id="SerialEliminar">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- MODAL SUGERENCIA -->
+<!-- ===================================================== -->
+
 <div class="modal fade" id="modalSugerencia" tabindex="-1" aria-hidden="true" th:if="${sugerencia != null}">
     <div class="modal-dialog">
         <div class="modal-content bg-dark text-light">
+
             <div class="modal-header">
                 <h5 class="modal-title">Sugerencia de Serial</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+
             <div class="modal-body">
                 <p>Se encontró un serial parecido: <b th:text="${sugerencia}"></b></p>
                 <p>Desea marcar como encontrado o como no inventariado?</p>
             </div>
+
             <div class="modal-footer">
+
                 <form method="post" action="/agregar-serial">
                     <input type="hidden" name="serial" th:value="${sugerencia}">
                     <input type="hidden" name="accion" value="encontrado">
                     <button type="submit" class="btn btn-success">Marcado como encontrado</button>
                 </form>
+
                 <form method="post" action="/agregar-serial">
                     <input type="hidden" name="serial" th:value="${serialOriginal}">
                     <input type="hidden" name="accion" value="noInventariado">
                     <button type="submit" class="btn btn-danger">No inventariado</button>
                 </form>
+
             </div>
+
         </div>
     </div>
 </div>
 
-<!-- BOOTSTRAP JS -->
+<!-- BOOTSTRAP -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- SCRIPT PARA ABRIR MODAL AUTOMÁTICAMENTE -->
+<!-- ABRIR MODAL SUGERENCIA AUTOMATICAMENTE -->
 <script th:if="${sugerencia != null}">
     var modal = new bootstrap.Modal(document.getElementById('modalSugerencia'));
     modal.show();
+</script>
+
+<!-- SCRIPT PARA MODAL ELIMINAR (ARREGLADO) -->
+<script>
+    const modalEliminar = document.getElementById('modalEliminar');
+
+    modalEliminar.addEventListener('show.bs.modal', function (event) {
+        let button = event.relatedTarget;
+        let serial = button.getAttribute('data-serial');
+
+        document.getElementById('serialAEliminar').innerText = serial;
+        document.getElementById('SerialEliminar').value = serial; // ✅ AHORA FUNCIONA
+    });
 </script>
 
 </body>

@@ -58,3 +58,16 @@ input {
     max-width: 1150px;   /* Ajustalo a gusto */
     flex-grow: 0;       /* Evita que se expanda */
 }
+
+/* Oculta el tachito hasta hover */
+.list-group-item .btn-trash {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+}
+
+/* Cuando se pasa el mouse, aparece el tachito */
+.list-group-item:hover .btn-trash {
+    opacity: 1;
+    pointer-events: auto;
+}
