@@ -7,54 +7,155 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-        body { background: #1c1c1c; color: #f8f9fa; position: relative; }
-        .card { border-radius: 1rem; }
-        .summary-card { transition: transform 0.2s, box-shadow 0.2s; }
-        .summary-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .btn-lg { min-width: 180px; font-weight: bold; }
-        h2 { font-weight: 700; color: #ffc107; }
+
+        body {
+            background: #0d0d12;
+            color: #e5e5e5;
+        }
+
+        /* Contenedor del título */
+        .header-box {
+            background: linear-gradient(135deg, #2a1544, #3d1d5d);
+            border-radius: 1.2rem;
+            padding: 2.2rem;
+            box-shadow: 0 0 25px rgba(61, 29, 93, 0.4);
+            text-align: center;
+            margin-bottom: 2.8rem;
+        }
+
+        .header-box h2 {
+            font-weight: 700;
+            color: #d58cff;
+        }
+
+        .header-box p {
+            color: #bfa7d8;
+            font-size: 1.1rem;
+        }
+
+        /* Tarjetas */
+        .summary-card {
+            transition: transform .25s, box-shadow .25s;
+            border-radius: 1rem;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 18px rgba(255, 255, 255, 0.15);
+        }
+
+        /* Listas */
+        .list-box {
+            background: #12121a;
+            border: 1px solid #1f1f27;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: 0 0 12px rgba(0,0,0,0.35);
+        }
+
+        .list-box table {
+            margin-bottom: 0;
+        }
+
+        /* Filas */
+        .fila-verde td {
+            color: #6cffb7 !important;
+            font-weight: bold;
+            border-left: 4px solid #00ff80;
+            background: rgba(0, 255, 128, 0.05);
+        }
+
+        .fila-roja td {
+            color: #ff8e8e !important;
+            font-weight: bold;
+            border-left: 4px solid #ff3b3b;
+            background: rgba(255, 60, 60, 0.06);
+        }
+
+        /* Botones */
+        .btn-lg {
+            min-width: 190px;
+            font-weight: bold;
+        }
+
+        .btn-light {
+            background: #2e2e38;
+            color: white;
+            border: 1px solid #4d4d58;
+        }
+
+        .btn-light:hover {
+            background: #3d3d46;
+        }
+
+        /* Créditos */
+        .creditos {
+            margin-top: 40px;
+            text-align: center;
+            color: #bfa7d8;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container mt-5">
 
-    <div class="text-center mb-4">
-        <h2>✅ Relevamiento Finalizado</h2>
-        <p class="fs-5 text-secondary">Resumen de la sesión</p>
+    <!-- Encabezado -->
+    <div class="header-box">
+        <h2>Relevamiento Finalizado</h2>
+        <p>Resumen detallado de la sesión</p>
     </div>
 
-    <div class="row g-4 mb-4">
+    <!-- Tarjetas -->
+    <div class="row g-4 mb-5">
         <div class="col-md-4">
             <div class="card bg-primary text-white p-3 summary-card h-100">
                 <h5 class="text-center">Esperados</h5>
-                <p class="fs-4 text-center mt-3" th:text="${esperados}"></p>
+                <p class="fs-3 text-center mt-3" th:text="${esperados}"></p>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="card bg-success text-white p-3 summary-card h-100">
                 <h5 class="text-center">Encontrados</h5>
-                <p class="fs-4 text-center mt-3" th:text="${encontrados}"></p>
+                <p class="fs-3 text-center mt-3" th:text="${encontrados}"></p>
             </div>
         </div>
+
         <div class="col-md-4">
             <div class="card bg-danger text-white p-3 summary-card h-100">
                 <h5 class="text-center">No inventariados</h5>
-                <p class="fs-4 text-center mt-3" th:text="${sobrantes}"></p>
+                <p class="fs-3 text-center mt-3" th:text="${sobrantes}"></p>
             </div>
         </div>
     </div>
 
-    <div class="text-center mb-3">
+    <!-- Botones descarga -->
+    <div class="text-center mb-4">
         <a th:href="@{/exportar-excel}" class="btn btn-success btn-lg me-3">📗 Descargar Excel</a>
         <a th:href="@{/exportar-pdf}" class="btn btn-warning btn-lg">📕 Descargar PDF</a>
     </div>
 
+    <!-- Volver -->
     <div class="text-center mb-3">
         <a href="/relevamiento" class="btn btn-light btn-lg me-3">🔄 Volver al relevamiento</a>
         <a href="/" class="btn btn-secondary btn-lg">🏠 Volver al inicio</a>
     </div>
 
+    <!-- Créditos -->
+    <div class="creditos">
+         Sistema de relevamiento avanzado
+        <br>
+        <span style="color:#d58cff; font-size:1.2rem;">💜</span>
+        <div style="margin-top:6px; font-family:'Brush Script MT', cursive; font-size:1.4rem; color:#caa0ff; opacity:0.9;">
+            — Luciano Enrique Sanchez —
+        </div>
+    </div>
+
 </div>
+
 </body>
 </html>
