@@ -24,9 +24,7 @@ public class Relevamiento {
         }
     }
 
-    public void eliminarSobrante(String serial) {
-        numeroSerialSobrante.removeIf(s -> s.equalsIgnoreCase(serial));
-    }
+
 
     public void cargarSeriales(List<String> seriales) {
         numeroSerialEsperado.clear();

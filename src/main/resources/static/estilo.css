@@ -76,68 +76,64 @@ input {
     pointer-events: auto;
 }
 
-/* ============================= */
-/* 🔹 SERIAL RECIÉN AGREGADO - ENCONTRADOS 🔹 */
+/* ====================================================== */
+/*   ESTILOS DE RESULTADOS: VERDE = ENCONTRADOS ✔️        */
+/*                     ROJO = SOBRANTES ❌                */
+/* ====================================================== */
+
+/* ✔️ ENCONTRADO (Verde) */
+.encontrado,
 .recien-agregado {
-    position: relative;
-    border-left: 5px solid #ed053f;
-    background-color: #1a1a1a;
-    z-index: 1;
-    overflow: visible;
+    background-color: #0d2614 !important;
+    color: #c2ffd7 !important;
+
+    border-left: 5px solid transparent;   /* 🔹 IMPORTANTE: transparente para que parpadee */
+
+    animation: glowVerde 2s ease-out forwards;
 }
 
-.recien-agregado::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    background: transparent;
-    box-shadow: 0 0 0 #ed053f;
-    animation: lucesDestello 2.5s ease-out forwards;
-    z-index: 2;
+@keyframes glowVerde {
+    0%   { box-shadow: 0 0 12px #00ff70; }
+    40%  { box-shadow: 0 0 28px #00ff70; }
+    100% { box-shadow: 0 0 0 transparent; }
 }
 
-@keyframes lucesDestello {
-    0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-    20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
-    40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-    60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
-    80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
-    100% { box-shadow: 0 0 0 #ed053f; }
+/* ❌ NO INVENTARIADO (Rojo) */
+.no-inventariado,
+.recien-agregado-sobrante {
+    background-color: #330f0f !important;
+    color: #ffb8b8 !important;
+
+    border-left: 5px solid transparent; /* 🔹 También transparente */
+
+    animation: glowRojo 2s ease-out forwards;
+}
+
+@keyframes glowRojo {
+    0%   { box-shadow: 0 0 12px #ff3b3b; }
+    40%  { box-shadow: 0 0 28px #ff3b3b; }
+    100% { box-shadow: 0 0 0 transparent; }
 }
 
 /* ============================= */
-/* 🔹 SERIAL RECIÉN AGREGADO - NO INVENTARIADOS 🔹 */
-.recien-agregado-sobrante {
-    position: relative;
-    border-left: 5px solid #ed053f;
-    background-color: #1a1a1a;
-    z-index: 1;
-    overflow: visible;
+/* 🔹 TITULOS DE SECCION 🔹 */
+.titulo-seccion {
+    font-size: 1.3rem;
+    color: #d58cff;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 
-.recien-agregado-sobrante::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    background: transparent;
-    box-shadow: 0 0 0 #ed053f;
-    animation: lucesDestelloSobrante 2.5s ease-out forwards;
-    z-index: 2;
+/* ============================= */
+/* 🔹 TARJETAS MODERNAS 🔹 */
+.card-dark {
+    background: #0d1117;
+    border: 1px solid #1f2937;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 0 12px rgba(213, 140, 255, 0.1);
 }
 
-@keyframes lucesDestelloSobrante {
-    0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-    20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
-    40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-    60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
-    80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
-    100% { box-shadow: 0 0 0 #ed053f; }
+.card-dark h5 {
+    color: #d58cff !important;
 }

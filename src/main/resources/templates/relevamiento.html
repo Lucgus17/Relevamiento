@@ -36,71 +36,7 @@
             transform: scale(1.2);
         }
 
-        /* ============================= */
-        /* 🔹 SERIAL RECIÉN AGREGADO - ENCONTRADOS 🔹 */
-        .recien-agregado {
-            position: relative;
-            border-left: 5px solid #ed053f;
-            background-color: #1a1a1a;
-            z-index: 1;
-            overflow: visible;
-        }
-
-        .recien-agregado::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: transparent;
-            box-shadow: 0 0 0 #ed053f;
-            animation: lucesDestello 2.5s ease-out forwards;
-            z-index: 2;
-        }
-
-        @keyframes lucesDestello {
-            0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-            20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
-            40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-            60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
-            80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
-            100% { box-shadow: 0 0 0 #ed053f; }
-        }
-
-        /* ============================= */
-        /* 🔹 SERIAL RECIÉN AGREGADO - NO INVENTARIADOS 🔹 */
-        .recien-agregado-sobrante {
-            position: relative;
-            border-left: 5px solid #ed053f;
-            background-color: #1a1a1a;
-            z-index: 1;
-            overflow: visible;
-        }
-
-        .recien-agregado-sobrante::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            background: transparent;
-            box-shadow: 0 0 0 #ed053f;
-            animation: lucesDestelloSobrante 2.5s ease-out forwards;
-            z-index: 2;
-        }
-
-        @keyframes lucesDestelloSobrante {
-            0%   { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-            20%  { box-shadow: 0 0 15px #ed053f, 0 0 30px #ed053f, 0 0 50px #ed053f; }
-            40%  { box-shadow: 0 0 5px #ed053f, 0 0 10px #ed053f, 0 0 15px #ed053f; }
-            60%  { box-shadow: 0 0 20px #ed053f, 0 0 40px #ed053f, 0 0 60px #ed053f; }
-            80%  { box-shadow: 0 0 10px #ed053f, 0 0 20px #ed053f, 0 0 30px #ed053f; }
-            100% { box-shadow: 0 0 0 #ed053f; }
-        }
+        /* (Asegurate de tener en tu estilo.css los estilos verde/rojo que ya te pasé) */
     </style>
 </head>
 
@@ -112,16 +48,8 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="text-warning">Relevamiento de Seriales</h1>
         <form method="post" action="/finalizar">
-            <button class="btn btn-danger">Finalizar Sesión</button>
+            <button class="btn btn-danger">Finalizar Relevamiento</button>
         </form>
-    </div>
-
-    <!-- PANEL DE SESIÓN -->
-    <div class="card bg-secondary text-white mb-4">
-        <div class="card-body">
-            <h4>Sesión en Curso</h4>
-            <p>Inicio: <span th:text="${#temporals.format(inicio, 'dd/MM/yyyy HH:mm:ss')}"></span></p>
-        </div>
     </div>
 
     <!-- INGRESO DE SERIAL -->
@@ -163,11 +91,14 @@
                 <div class="card-header text-center bg-success">ENCONTRADOS</div>
                 <div class="card-body" style="overflow-y:auto; max-height:400px;">
                     <ul class="list-group">
+                        <!-- IMPORTANTE: comparo normalizando ambos lados (trim + upper) -->
                         <li th:each="s : ${encontrados}"
-                            th:classappend="${s == ultimoSerial} ? ' recien-agregado'"
+                            th:classappend="${#strings.toUpperCase(#strings.trim(s)) ==
+                                            #strings.toUpperCase(#strings.trim(ultimoSerial))} ? ' recien-agregado'"
                             class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
                             <span th:text="${s}"></span>
-                            <button class="btn-trash" data-bs-toggle="modal" data-bs-target="#modalEliminar" th:attr="data-serial=${s}">
+                            <button class="btn-trash" data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                                    th:attr="data-serial=${s}">
                                 <i class="bi bi-trash3-fill"></i>
                             </button>
                         </li>
@@ -185,11 +116,14 @@
                 <div class="card-header text-center bg-danger">NO INVENTARIADOS</div>
                 <div class="card-body" style="overflow-y:auto; max-height:400px;">
                     <ul class="list-group">
+                        <!-- Igual normalizo para que la comparación funcione -->
                         <li th:each="s : ${sobrantes}"
-                            th:classappend="${s == ultimoSerial} ? ' recien-agregado-sobrante'"
+                            th:classappend="${#strings.toUpperCase(#strings.trim(s)) ==
+                                            #strings.toUpperCase(#strings.trim(ultimoSerial))} ? ' recien-agregado-sobrante'"
                             class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
                             <span th:text="${s}"></span>
-                            <button class="btn-trash" data-bs-toggle="modal" data-bs-target="#modalEliminar" th:attr="data-serial=${s}">
+                            <button class="btn-trash" data-bs-toggle="modal" data-bs-target="#modalEliminar"
+                                    th:attr="data-serial=${s}">
                                 <i class="bi bi-trash3-fill"></i>
                             </button>
                         </li>
@@ -262,14 +196,12 @@
 
 <!-- Auto mostrar modal de sugerencia -->
 <script th:if="${sugerencia != null}">
-    var modal = new bootstrap.Modal(document.getElementById('modalSugerencia'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalSugerencia')).show();
 </script>
 
 <!-- Modal eliminar -->
 <script>
-    const modalEliminar = document.getElementById('modalEliminar');
-    modalEliminar.addEventListener('show.bs.modal', function (event) {
+    document.getElementById('modalEliminar').addEventListener('show.bs.modal', function (event) {
         let button = event.relatedTarget;
         let serial = button.getAttribute('data-serial');
         document.getElementById('serialAEliminar').innerText = serial;
