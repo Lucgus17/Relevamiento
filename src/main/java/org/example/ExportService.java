@@ -30,29 +30,83 @@ public class ExportService {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = wb.createSheet("Relevamiento");
-            CellStyle headerStyle = wb.createCellStyle();
+
+            // ================= ESTILOS =================
+            Font tituloFont = wb.createFont();
+            tituloFont.setBold(true);
+            tituloFont.setFontHeightInPoints((short) 16);
+
+            CellStyle tituloStyle = wb.createCellStyle();
+            tituloStyle.setFont(tituloFont);
+
             Font headerFont = wb.createFont();
             headerFont.setBold(true);
+            headerFont.setColor(IndexedColors.WHITE.getIndex());
+
+            CellStyle headerStyle = wb.createCellStyle();
             headerStyle.setFont(headerFont);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
 
-            Row header = sheet.createRow(0);
+            CellStyle cellStyle = wb.createCellStyle();
+            cellStyle.setBorderBottom(BorderStyle.THIN);
+            cellStyle.setBorderTop(BorderStyle.THIN);
+            cellStyle.setBorderLeft(BorderStyle.THIN);
+            cellStyle.setBorderRight(BorderStyle.THIN);
+
+            // ================= TITULO =================
+            Row tituloRow = sheet.createRow(0);
+            Cell tituloCell = tituloRow.createCell(0);
+            tituloCell.setCellValue(nombre);
+            tituloCell.setCellStyle(tituloStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 2));
+
+            // ================= FECHA =================
+            Row fechaRow = sheet.createRow(1);
+            fechaRow.createCell(0).setCellValue(
+                    "Fecha fin relevamiento: " + LocalDateTime.now()
+                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            );
+
+            // ================= HEADERS =================
+            Row header = sheet.createRow(3);
             String[] columnas = {"ESPERADOS", "ENCONTRADOS", "NO INVENTARIADOS"};
+
             for (int i = 0; i < columnas.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(columnas[i]);
                 cell.setCellStyle(headerStyle);
             }
 
-            int maxRows = Math.max(esperados.size(), Math.max(encontrados.size(), sobrantes.size()));
+            // ================= DATA =================
+            int maxRows = Math.max(esperados.size(),
+                    Math.max(encontrados.size(), sobrantes.size()));
+
             for (int i = 0; i < maxRows; i++) {
-                Row row = sheet.createRow(i + 1);
-                if (i < esperados.size()) row.createCell(0).setCellValue(esperados.get(i));
-                if (i < encontrados.size()) row.createCell(1).setCellValue(encontrados.get(i));
-                if (i < sobrantes.size()) row.createCell(2).setCellValue(sobrantes.get(i));
+                Row row = sheet.createRow(i + 4);
+
+                if (i < esperados.size()) {
+                    Cell c = row.createCell(0);
+                    c.setCellValue(esperados.get(i));
+                    c.setCellStyle(cellStyle);
+                }
+                if (i < encontrados.size()) {
+                    Cell c = row.createCell(1);
+                    c.setCellValue(encontrados.get(i));
+                    c.setCellStyle(cellStyle);
+                }
+                if (i < sobrantes.size()) {
+                    Cell c = row.createCell(2);
+                    c.setCellValue(sobrantes.get(i));
+                    c.setCellStyle(cellStyle);
+                }
             }
 
-            for (int i = 0; i < columnas.length; i++) sheet.autoSizeColumn(i);
+            for (int i = 0; i < 3; i++) {
+                sheet.autoSizeColumn(i);
+            }
 
             wb.write(out);
             return out.toByteArray();
@@ -62,6 +116,7 @@ public class ExportService {
             return null;
         }
     }
+
 
     public static byte[] generarPdf(
             String nombre,
@@ -75,14 +130,44 @@ public class ExportService {
             PdfDocument pdf = new PdfDocument(writer);
             Document document = new Document(pdf);
 
-            document.add(new Paragraph("Relevamiento: " + nombre)
-                    .setBold().setFontSize(18));
+            // ================= TITULO =================
+
+            document.add(new Paragraph(nombre)
+                    .setBold()
+                    .setFontSize(18)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+
+            document.add(new Paragraph(
+                    "Fecha fin relevamiento: " + LocalDateTime.now()
+                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+            ).setFontSize(10)
+                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+
             document.add(new Paragraph("\n"));
 
-            agregarSeccion(document, "Seriales Esperados", esperados);
-            agregarSeccion(document, "Seriales Encontrados", encontrados);
-            agregarSeccion(document, "Seriales No Inventariados", sobrantes);
+            // ================= TABLA =================
+            float[] widths = {1, 1, 1};
+            com.itextpdf.layout.element.Table table =
+                    new com.itextpdf.layout.element.Table(widths)
+                            .useAllAvailableWidth();
 
+            // Headers
+            table.addHeaderCell(headerCell("ESPERADOS"));
+            table.addHeaderCell(headerCell("ENCONTRADOS"));
+            table.addHeaderCell(headerCell("NO INVENTARIADOS"));
+
+            int maxRows = Math.max(
+                    esperados.size(),
+                    Math.max(encontrados.size(), sobrantes.size())
+            );
+
+            for (int i = 0; i < maxRows; i++) {
+                table.addCell(bodyCell(i < esperados.size() ? esperados.get(i) : ""));
+                table.addCell(bodyCell(i < encontrados.size() ? encontrados.get(i) : ""));
+                table.addCell(bodyCell(i < sobrantes.size() ? sobrantes.get(i) : ""));
+            }
+
+            document.add(table);
             document.close();
             return out.toByteArray();
 
@@ -92,13 +177,41 @@ public class ExportService {
         }
     }
 
-    private static void agregarSeccion(Document doc, String titulo, List<String> items) {
-        doc.add(new Paragraph(titulo).setBold().setFontSize(14).setMarginTop(10).setMarginBottom(5));
+    private static com.itextpdf.layout.element.Cell headerCell(String text) {
+        return new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(text).setBold())
+                .setBackgroundColor(com.itextpdf.kernel.colors.ColorConstants.DARK_GRAY)
+                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.WHITE)
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+    }
 
-        com.itextpdf.layout.element.List lista = new com.itextpdf.layout.element.List();
+    private static com.itextpdf.layout.element.Cell bodyCell(String text) {
+        return new com.itextpdf.layout.element.Cell()
+                .add(new Paragraph(text))
+                .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER);
+    }
+
+
+    private static void agregarSeccion(Document doc, String titulo, List<String> items) {
+
+        doc.add(new Paragraph(titulo)
+                .setBold()
+                .setFontSize(14)
+                .setMarginTop(15)
+                .setMarginBottom(5));
+
+        if (items.isEmpty()) {
+            doc.add(new Paragraph("— Sin registros —").setItalic());
+            return;
+        }
+
+        com.itextpdf.layout.element.List lista =
+                new com.itextpdf.layout.element.List().setSymbolIndent(12);
+
         for (String s : items) {
             lista.add(new ListItem(s));
         }
         doc.add(lista);
     }
+
 }

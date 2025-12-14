@@ -99,47 +99,75 @@ public class HomeController {
     // ------------------------ FINALIZAR SESIÓN ------------------------
     @PostMapping("/finalizar")
     public String finalizarSesion(HttpSession session, Model model) {
+
+        String nombre = (String) session.getAttribute("nombreRelevamiento");
+
+        model.addAttribute("nombreRelevamiento", nombre);
         model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
         model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
 
-        session.invalidate();
+        session.invalidate(); // ✔ ahora sí
         return "finalizado";
     }
 
+
     // ------------------------ EXPORTAR EXCEL ------------------------
     @GetMapping("/exportar-excel")
-    public void exportarExcel(HttpServletResponse response) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=" +
-                ExportService.generarNombreArchivo("relevamiento", "xlsx"));
+    public void exportarExcel(
+            @RequestParam String nombre,
+            HttpServletResponse response
+    ) throws IOException {
+
+        response.setContentType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename=\"" +
+                        ExportService.generarNombreArchivo(nombre, "xlsx") +
+                        "\""
+        );
 
         byte[] archivo = ExportService.generarExcel(
-                "Relevamiento",
+                nombre,
                 relevamiento.getNumeroSerialEsperado(),
                 relevamiento.getNumeroSerialEncontrado(),
                 relevamiento.getNumeroSerialSobrante()
         );
 
         response.getOutputStream().write(archivo);
-        response.getOutputStream().flush();
     }
+
+
 
     // ------------------------ EXPORTAR PDF ------------------------
     @GetMapping("/exportar-pdf")
-    public void exportarPdf(HttpServletResponse response) throws IOException {
+    public void exportarPdf(
+            @RequestParam String nombre,
+            HttpServletResponse response
+    ) throws IOException {
+
         response.setContentType("application/pdf");
-        response.setHeader("Content-Disposition", "attachment; filename=" +
-                ExportService.generarNombreArchivo("relevamiento", "pdf"));
+
+        response.setHeader(
+                "Content-Disposition",
+                "attachment; filename=\"" +
+                        ExportService.generarNombreArchivo(nombre, "pdf") +
+                        "\""
+        );
 
         byte[] archivo = ExportService.generarPdf(
-                "Relevamiento",
+                nombre,
                 relevamiento.getNumeroSerialEsperado(),
                 relevamiento.getNumeroSerialEncontrado(),
                 relevamiento.getNumeroSerialSobrante()
         );
 
         response.getOutputStream().write(archivo);
-        response.getOutputStream().flush();
     }
+
+
+
 }

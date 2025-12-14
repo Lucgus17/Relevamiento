@@ -135,8 +135,18 @@
 
     <!-- Botones descarga -->
     <div class="text-center mb-4">
-        <a th:href="@{/exportar-excel}" class="btn btn-success btn-lg me-3">📗 Descargar Excel</a>
-        <a th:href="@{/exportar-pdf}" class="btn btn-warning btn-lg">📕 Descargar PDF</a>
+        <form th:action="@{/exportar-excel}" method="get" class="d-inline">
+            <input type="hidden" name="nombre"
+                   th:value="${nombreRelevamiento}">
+            <button class="btn btn-success btn-lg me-3">📗 Descargar Excel</button>
+        </form>
+
+        <form th:action="@{/exportar-pdf}" method="get" class="d-inline">
+            <input type="hidden" name="nombre"
+                   th:value="${nombreRelevamiento}">
+            <button class="btn btn-warning btn-lg">📕 Descargar PDF</button>
+        </form>
+
     </div>
 
     <!-- Volver -->
