@@ -37,7 +37,7 @@ public class ExportService {
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
 
             Row header = sheet.createRow(0);
-            String[] columnas = {"ESPERADOS", "ENCONTRADOS", "SOBRANTES"};
+            String[] columnas = {"ESPERADOS", "ENCONTRADOS", "NO INVENTARIADOS"};
             for (int i = 0; i < columnas.length; i++) {
                 Cell cell = header.createCell(i);
                 cell.setCellValue(columnas[i]);
@@ -81,7 +81,7 @@ public class ExportService {
 
             agregarSeccion(document, "Seriales Esperados", esperados);
             agregarSeccion(document, "Seriales Encontrados", encontrados);
-            agregarSeccion(document, "Seriales Sobrantes", sobrantes);
+            agregarSeccion(document, "Seriales No Inventariados", sobrantes);
 
             document.close();
             return out.toByteArray();
