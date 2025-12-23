@@ -4,39 +4,268 @@
     <meta charset="UTF-8">
     <title>Inicio - Relevamiento</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-    <link th:href="@{/estilo.css}" rel="stylesheet">
+    <!-- BOOTSTRAP -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* -----------------------------
-           AJUSTE DEL MODAL (más compacto)
-        ------------------------------ */
-
-        /* Reducir altura del header */
-        .modal-header {
-            padding-top: 0.6rem !important;
-            padding-bottom: 0.6rem !important;
-        }
-
-        /* Ajustar tamaño del título */
-        .modal-title {
-            font-size: 1.25rem;
+        /* ============================= */
+        /* 🔹 FONDO ANIMADO TIPO ESCÁNER 🔹 */
+        body {
             margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
         }
 
-        /* Ajustar paddings internos del modal */
-        .modal-content .modal-body,
-        .modal-content .modal-footer {
-            padding-top: 1rem !important;
-            padding-bottom: 1rem !important;
+        .bg-animado {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #0f172a, #020617);
+            overflow: hidden;
+            position: relative;
         }
 
-        /* Afinar borde del modal + glow violeta */
+        .bg-animado::before {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 250%;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 255, 255, 0.12) 45%,
+                rgba(0, 255, 255, 0.25) 50%,
+                rgba(0, 255, 255, 0.12) 55%,
+                transparent 100%
+            );
+            animation: scan 6s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { top: -120%; }
+            100% { top: 120%; }
+        }
+
+        /* ============================= */
+        /* 🔹 CARD PRINCIPAL 🔹 */
+        .main-card {
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border: 1px solid #374151;
+            border-radius: 20px;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 8px 32px rgba(0, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .main-card h1 {
+            color: #22c55e;
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .main-card .subtitle {
+            color: #9ca3af;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+
+        /* ============================= */
+        /* 🔹 BOTÓN PRINCIPAL CON GLOW 🔹 */
+        .btn-start {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            background: #22c55e;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-start:hover {
+            background: #16a34a;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.8),
+                        0 0 40px rgba(34, 197, 94, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-start i {
+            margin-right: 0.5rem;
+        }
+
+        /* ============================= */
+        /* 🔹 MODALES 🔹 */
         .modal-content {
+            background: #111827;
+            border: 1px solid #374151;
             border-radius: 12px;
-            box-shadow: 0 0 25px #d58cff70;
-            border: 1px solid #5d2b86;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #374151;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .modal-title {
+            color: #22c55e;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #374151;
+            padding: 1rem 1.5rem;
+        }
+
+        /* ============================= */
+        /* 🔹 BOTONES DE TIPO 🔹 */
+        .btn-tipo {
+            width: 100%;
+            padding: 1.25rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            background: #1f2937;
+            border: 2px solid #374151;
+            border-radius: 10px;
+            color: #e5e7eb;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .btn-tipo:hover {
+            background: #2d3748;
+            border-color: #22c55e;
+            color: #22c55e;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-tipo i {
+            font-size: 1.5rem;
+        }
+
+        .btn-tipo.bienes:hover {
+            border-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .btn-tipo.oficinas:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        /* ============================= */
+        /* 🔹 FORMULARIO 🔹 */
+        .form-label {
+            color: #e5e7eb;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-control, .form-select {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #e5e7eb;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: #2d3748;
+            border-color: #22c55e;
+            color: #e5e7eb;
+            box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.25);
+        }
+
+        .form-control::placeholder {
+            color: #6b7280;
+        }
+
+        .form-text {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        /* ============================= */
+        /* 🔹 BOTONES DEL MODAL 🔹 */
+        .btn-secondary-custom {
+            background: #374151;
+            border: none;
+            color: #e5e7eb;
+            padding: 0.625rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary-custom:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-success-custom {
+            background: #22c55e;
+            border: none;
+            color: white;
+            padding: 0.625rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-success-custom:hover {
+            background: #16a34a;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        /* ============================= */
+        /* 🔹 ICONOS DECORATIVOS 🔹 */
+        .icon-decoration {
+            position: absolute;
+            font-size: 8rem;
+            opacity: 0.03;
+            color: #22c55e;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .icon-top-left {
+            top: -2rem;
+            left: -2rem;
+        }
+
+        .icon-bottom-right {
+            bottom: -2rem;
+            right: -2rem;
         }
     </style>
 </head>
@@ -44,33 +273,92 @@
 <body class="bg-animado text-light">
 
 <div class="container vh-100 d-flex justify-content-center align-items-center">
-    <div class="card bg-secondary text-white p-4 shadow-lg text-center"
-         style="width: 28rem; border-radius: 16px; box-shadow: 0 0 25px #d58cff60;">
-        <h1 class="mb-4 text-white">Sistema de Relevamiento</h1>
+    <div class="main-card">
+        <!-- Iconos decorativos -->
+        <i class="bi bi-clipboard-check icon-decoration icon-top-left"></i>
+        <i class="bi bi-upc-scan icon-decoration icon-bottom-right"></i>
 
-        <button class="btn btn-success w-100"
+        <h1>
+            <i class="bi bi-gear-fill"></i> Sistema de Relevamiento
+        </h1>
+        <p class="subtitle">
+            Gestión eficiente de inventario y equipamiento
+        </p>
+
+        <button class="btn btn-start"
                 data-bs-toggle="modal"
-                data-bs-target="#modalExcel">
-            Iniciar Relevamiento
+                data-bs-target="#modalTipoRelevamiento">
+            <i class="bi bi-play-circle-fill"></i> Iniciar Relevamiento
         </button>
     </div>
 </div>
 
+<!-- ===============================
+     MODAL SELECCIÓN TIPO
+================================ -->
+<div class="modal fade" id="modalTipoRelevamiento" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
 
-<!-- Modal carga Excel -->
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-list-check"></i> Seleccione el tipo de relevamiento
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <button class="btn btn-tipo bienes mb-3"
+                        data-bs-dismiss="modal"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalExcel"
+                        onclick="setTipo('BIENES')">
+                    <i class="bi bi-upc-scan"></i>
+                    <span>Relevamiento de Bienes</span>
+                </button>
+
+                <button class="btn btn-tipo oficinas"
+                        data-bs-dismiss="modal"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalExcel"
+                        onclick="setTipo('OFICINAS')">
+                    <i class="bi bi-building"></i>
+                    <span>Relevamiento de Oficinas</span>
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ===============================
+     MODAL CARGA EXCEL
+================================ -->
 <div class="modal fade" id="modalExcel" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content card bg-dark text-light mb-4">
-            <form th:action="@{/iniciar-relevamiento}" method="post" enctype="multipart/form-data">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <form th:action="@{/iniciar-relevamiento}"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden" name="tipoRelevamiento" id="tipoRelevamiento">
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Cargar archivo Excel</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-excel"></i> Cargar archivo Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
+
                     <div class="mb-3">
-                        <label class="form-label">Nombre del Relevamiento</label>
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Nombre del Relevamiento
+                        </label>
                         <input type="text"
                                name="nombreRelevamiento"
                                class="form-control"
@@ -78,22 +366,32 @@
                                required>
                     </div>
 
-                    <p>Seleccione el archivo Excel con números de serie:</p>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-upload"></i> Archivo Excel
+                        </label>
+                        <input type="file"
+                               name="archivo"
+                               class="form-control"
+                               required
+                               accept=".xls,.xlsx">
+                        <div class="form-text">
+                            Formatos aceptados: .xls, .xlsx
+                        </div>
+                    </div>
 
-                    <input type="file"
-                           name="archivo"
-                           class="form-control"
-                           required
-                           accept=".xls,.xlsx">
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        Cancelar
+                    <button type="button"
+                            class="btn btn-secondary-custom"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
                     </button>
 
-                    <button type="submit" class="btn btn-success">
-                        Iniciar Relevamiento
+                    <button type="submit"
+                            class="btn btn-success-custom">
+                        <i class="bi bi-play-fill"></i> Iniciar Relevamiento
                     </button>
                 </div>
 
@@ -102,7 +400,14 @@
     </div>
 </div>
 
-
+<!-- BOOTSTRAP JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function setTipo(tipo) {
+        document.getElementById("tipoRelevamiento").value = tipo;
+    }
+</script>
+
 </body>
 </html>

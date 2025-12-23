@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relevamiento Finalizado</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f1117 0%, #1a1d29 100%);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.6s ease-out;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 24px rgba(34, 197, 94, 0.3);
+        }
+
+        .success-icon i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .main-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #22c55e;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #9ca3af;
+            font-size: 1.125rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--card-color), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--card-color);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card-empleados { --card-color: #3b82f6; }
+        .stat-card-equipos { --card-color: #8b5cf6; }
+        .stat-card-impresoras { --card-color: #f97316; }
+        .stat-card-escaneres { --card-color: #06b6d4; }
+        /* Added colors for new equipment types */
+        .stat-card-cpu { --card-color: #6366f1; }
+        .stat-card-monitor { --card-color: #8b5cf6; }
+        .stat-card-telefono { --card-color: #10b981; }
+        .stat-card-camara { --card-color: #ec4899; }
+        .stat-card-firma { --card-color: #f59e0b; }
+
+        .stat-icon-container {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card-empleados .stat-icon-container {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+        }
+
+        .stat-card-equipos .stat-icon-container {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+        }
+
+        .stat-card-impresoras .stat-icon-container {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+        }
+
+        .stat-card-escaneres .stat-icon-container {
+            background: rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
+        }
+
+        /* Added icon containers for new equipment types */
+        .stat-card-cpu .stat-icon-container {
+            background: rgba(99, 102, 241, 0.15);
+            color: #6366f1;
+        }
+
+        .stat-card-monitor .stat-icon-container {
+            background: rgba(139, 92, 246, 0.15);
+            color: #8b5cf6;
+        }
+
+        .stat-card-telefono .stat-icon-container {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+        }
+
+        .stat-card-camara .stat-icon-container {
+            background: rgba(236, 72, 153, 0.15);
+            color: #ec4899;
+        }
+
+        .stat-card-firma .stat-icon-container {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+        }
+
+        .stat-icon-container i {
+            font-size: 2rem;
+        }
+
+        .stat-label {
+            color: #9ca3af;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #e5e7eb;
+            line-height: 1;
+        }
+
+        .actions-section {
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        .btn-custom {
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .btn-volver {
+            background: #374151;
+            color: #e5e7eb;
+            margin-right: 1rem;
+        }
+
+        .btn-volver:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-exportar {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-exportar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Added signature section styling */
+        .signature-section {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid #374151;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        .signature-section .heart {
+            color: #d58cff;
+            font-size: 1.2rem;
+        }
+
+        .signature-section .signature-text {
+            margin-top: 6px;
+            font-family: 'Brush Script MT', cursive;
+            font-size: 1.4rem;
+            color: #caa0ff;
+            opacity: 0.9;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container" style="max-width: 1200px;">
+
+    <div class="header-section">
+        <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h1 class="main-title">Relevamiento Finalizado</h1>
+        <p class="subtitle" th:text="${nombreRelevamiento}">Nombre del Relevamiento</p>
+    </div>
+
+    <!-- Expanded stats grid to show all equipment types individually -->
+    <div class="stats-grid">
+        <div class="stat-card stat-card-empleados">
+            <div class="stat-icon-container">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-label">Empleados</div>
+            <div class="stat-value" th:text="${totalEmpleados}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-cpu">
+            <div class="stat-icon-container">
+                <i class="bi bi-cpu"></i>
+            </div>
+            <div class="stat-label">CPUs</div>
+            <div class="stat-value" th:text="${totalCPUs}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-monitor">
+            <div class="stat-icon-container">
+                <i class="bi bi-display"></i>
+            </div>
+            <div class="stat-label">Monitores</div>
+            <div class="stat-value" th:text="${totalMonitores}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-telefono">
+            <div class="stat-icon-container">
+                <i class="bi bi-telephone-fill"></i>
+            </div>
+            <div class="stat-label">Teléfonos IP</div>
+            <div class="stat-value" th:text="${totalTelefonos}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-camara">
+            <div class="stat-icon-container">
+                <i class="bi bi-camera-video-fill"></i>
+            </div>
+            <div class="stat-label">Cámaras</div>
+            <div class="stat-value" th:text="${totalCamaras}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-firma">
+            <div class="stat-icon-container">
+                <i class="bi bi-pen"></i>
+            </div>
+            <div class="stat-label">Firmas</div>
+            <div class="stat-value" th:text="${totalFirmas}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-impresoras">
+            <div class="stat-icon-container">
+                <i class="bi bi-printer-fill"></i>
+            </div>
+            <div class="stat-label">Impresoras</div>
+            <div class="stat-value" th:text="${totalImpresoras}">0</div>
+        </div>
+
+        <div class="stat-card stat-card-escaneres">
+            <div class="stat-icon-container">
+                <i class="bi bi-upc-scan"></i>
+            </div>
+            <div class="stat-label">Escáneres</div>
+            <div class="stat-value" th:text="${totalEscaneres}">0</div>
+        </div>
+    </div>
+
+    <div class="actions-section">
+        <a href="/oficinas/relevamiento" class="btn btn-custom btn-volver">
+            <i class="bi bi-arrow-left"></i> Volver al relevamiento
+        </a>
+
+        <a href="/oficinas/exportar/excel" class="btn btn-custom btn-exportar">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+        </a>
+    </div>
+
+    <!-- Added signature section at the bottom -->
+    <div class="signature-section">
+        <div style="text-align: center;">
+            Sistema de relevamiento avanzado
+            <br>
+            <span style="color:#d58cff; font-size:1.2rem;">💜</span>
+            <div style="margin-top:6px; font-family:'Brush Script MT', cursive; font-size:1.4rem; color:#caa0ff; opacity:0.9;">
+                — Luciano Enrique Sanchez —
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -13,18 +13,36 @@ public class Relevamiento {
         return s.trim().toUpperCase();
     }
 
+    private String normalizeStrong(String s) {
+        if (s == null) return "";
+        return s.toUpperCase().replaceAll("[^A-Z0-9]", "");
+    }
+
+    // ===================== MÉTODOS NUEVOS CLAVE =====================
+
+    public void marcarComoEncontrado(String serial) {
+        String n = normalize(serial);
+        if (n == null || n.isEmpty()) return;
+
+        numeroSerialEsperado.removeIf(s -> s.equals(n));
+
+        if (!numeroSerialEncontrado.contains(n)) {
+            numeroSerialEncontrado.add(0, n);
+        }
+
+        numeroSerialSobrante.remove(n);
+    }
+
     public void agregarSobrante(String serial) {
         String n = normalize(serial);
         if (n == null || n.isEmpty()) return;
 
-        if (!numeroSerialSobrante.contains(n) &&
-                !numeroSerialEncontrado.contains(n)) {
-
-            numeroSerialSobrante.add(0, n); // agregar arriba
+        if (!numeroSerialSobrante.contains(n) && !numeroSerialEncontrado.contains(n)) {
+            numeroSerialSobrante.add(0, n);
         }
     }
 
-
+    // ===================== CARGA =====================
 
     public void cargarSeriales(List<String> seriales) {
         numeroSerialEsperado.clear();
@@ -41,86 +59,72 @@ public class Relevamiento {
         }
     }
 
+    // ===================== LÓGICA PRINCIPAL =====================
+
     public String procesarInputConSugerencia(String rawSerial) {
         if (rawSerial == null) return null;
 
-        // 🔥 limpieza TOTAL
-        String serial = normalizeStrong(rawSerial);
-        if (serial.isEmpty()) return null;
+        String serialNormal = normalize(rawSerial);
+        if (serialNormal == null || serialNormal.isEmpty()) return null;
 
-        // 1️⃣ Coincidencia exacta
-        if (numeroSerialEncontrado.contains(serial)) return null;
+        // 1️⃣ Ya encontrado
+        if (numeroSerialEncontrado.contains(serialNormal)) return null;
 
+        // 2️⃣ Coincidencia exacta
         for (int i = 0; i < numeroSerialEsperado.size(); i++) {
-            if (numeroSerialEsperado.get(i).equals(serial)) {
-                numeroSerialEncontrado.add(0, serial);
-                numeroSerialEsperado.remove(i);
+            if (numeroSerialEsperado.get(i).equals(serialNormal)) {
+                marcarComoEncontrado(serialNormal);
                 return null;
             }
         }
 
-        // 2️⃣ Buscar si el serial esperado está contenido dentro del texto limpio
+        // 3️⃣ Normalización fuerte
+        String serialFuerte = normalizeStrong(rawSerial);
+        if (serialFuerte.isEmpty()) {
+            agregarSobrante(serialNormal);
+            return null;
+        }
+
+        // 4️⃣ Contención
         for (String esperado : numeroSerialEsperado) {
             String esperadoLimpio = normalizeStrong(esperado);
-            if (serial.contains(esperadoLimpio)) {
-                return esperado;   // dispara modal
+            if (serialFuerte.contains(esperadoLimpio) && !serialFuerte.equals(esperadoLimpio)) {
+                return esperado;
             }
         }
 
-        // 3️⃣ Comparación por Levenshtein (diferencias pero similar)
-        String sugerencia = buscarSerialParecido(serial);
-        if (sugerencia != null) return sugerencia;
-
-        // 4️⃣ Sobrante
-        if (!numeroSerialSobrante.contains(serial)) {
-            numeroSerialSobrante.add(0, serial);
+        // 5️⃣ Levenshtein
+        String sugerencia = buscarSerialParecido(serialFuerte);
+        if (sugerencia != null) {
+            return sugerencia;
         }
 
+        // 6️⃣ Sobrante
+        agregarSobrante(serialNormal);
         return null;
     }
-
-
 
     private String buscarSerialParecido(String serialIngresado) {
-        if (serialIngresado == null || serialIngresado.isEmpty()) return null;
-
-        String ingresado = normalizeStrong(serialIngresado);
+        String mejor = null;
+        int menor = Integer.MAX_VALUE;
 
         for (String esperado : numeroSerialEsperado) {
-            String esperadoLimpio = normalizeStrong(esperado);
+            String e = normalizeStrong(esperado);
 
-            // Si está contenido directamente (caso ideal)
-            if (ingresado.contains(esperadoLimpio)) {
-                return esperado;
-            }
+            if (serialIngresado.contains(e) || e.contains(serialIngresado)) continue;
 
-            // Distancia Levenshtein
-            int dif = distancia(ingresado, esperadoLimpio);
-            int len = Math.max(ingresado.length(), esperadoLimpio.length());
+            int d = distancia(serialIngresado, e);
+            int len = Math.max(serialIngresado.length(), e.length());
 
-            // ================================
-            // 📌 Calcular umbral dinámico
-            // ================================
-            double umbral;
+            double umbral = len <= 6 ? 1 : len <= 12 ? Math.ceil(len * 0.10) : Math.ceil(len * 0.15);
 
-            if (len <= 6) {
-                umbral = 1; // super estricto
-            } else if (len <= 12) {
-                umbral = Math.ceil(len * 0.10); // 10%
-            } else {
-                umbral = Math.ceil(len * 0.15); // 15%
-            }
-
-            // Comparar con umbral dinámico
-            if (dif <= umbral) {
-                return esperado;
+            if (d <= umbral && d < menor) {
+                menor = d;
+                mejor = esperado;
             }
         }
-
-        return null;
+        return mejor;
     }
-
-
 
     private int distancia(String a, String b) {
         int[][] dp = new int[a.length() + 1][b.length() + 1];
@@ -130,12 +134,27 @@ public class Relevamiento {
 
         for (int i = 1; i <= a.length(); i++) {
             for (int j = 1; j <= b.length(); j++) {
-                if (a.charAt(i - 1) == b.charAt(j - 1)) dp[i][j] = dp[i - 1][j - 1];
-                else dp[i][j] = 1 + Math.min(dp[i - 1][j - 1],
+                dp[i][j] = a.charAt(i - 1) == b.charAt(j - 1)
+                        ? dp[i - 1][j - 1]
+                        : 1 + Math.min(dp[i - 1][j - 1],
                         Math.min(dp[i - 1][j], dp[i][j - 1]));
             }
         }
         return dp[a.length()][b.length()];
+    }
+
+    // ===================== GETTERS (solo lectura) =====================
+
+    public List<String> getNumeroSerialEsperado() {
+        return numeroSerialEsperado;
+    }
+
+    public List<String> getNumeroSerialEncontrado() {
+        return new ArrayList<>(numeroSerialEncontrado);
+    }
+
+    public List<String> getNumeroSerialSobrante() {
+        return new ArrayList<>(numeroSerialSobrante);
     }
 
     public Map<String, Long> contarNumerosSeriales() {
@@ -146,27 +165,9 @@ public class Relevamiento {
         return m;
     }
 
-    public List<String> getNumeroSerialEsperado() { return numeroSerialEsperado; }
-
-    public List<String> getNumeroSerialEncontrado() {
-        return new ArrayList<>(numeroSerialEncontrado); // ya no se invierte
-    }
-
-    public List<String> getNumeroSerialSobrante() {
-        return new ArrayList<>(numeroSerialSobrante); // ya no se invierte
-    }
-
     public void eliminar(String serial) {
-        serial = normalize(serial);
-        numeroSerialEncontrado.remove(serial);
-        numeroSerialSobrante.remove(serial);
+        String n = normalize(serial);
+        numeroSerialEncontrado.remove(n);
+        numeroSerialSobrante.remove(n);
     }
-    private String normalizeStrong(String s) { //Es para el reconocimiento de las palabras
-        if (s == null) return "";
-        return s
-                .toUpperCase()
-                .replaceAll("[^A-Z0-9]", ""); // elimina TODO lo que no sea letra o número
-    }
-
-
 }
