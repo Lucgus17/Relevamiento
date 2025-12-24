@@ -1,5 +1,6 @@
 package org.example;
 
+<<<<<<< HEAD
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,4 +91,7 @@ public class RelevamientoOficina {
                 .filter(e -> "ESCANER".equalsIgnoreCase(e.getTipo()))
                 .count();
     }
+=======
+public class RelevamientoOficina {
+>>>>>>> e3e2929cf987aaf0588efea2f1e4c18f600e17e4
 }

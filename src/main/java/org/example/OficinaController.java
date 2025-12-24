@@ -1,5 +1,6 @@
 package org.example;
 
+<<<<<<< HEAD
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -170,4 +171,7 @@ public class OficinaController {
 
         return "finalizado-oficinas";
     }
+=======
+public class OficinaController {
+>>>>>>> e3e2929cf987aaf0588efea2f1e4c18f600e17e4
 }

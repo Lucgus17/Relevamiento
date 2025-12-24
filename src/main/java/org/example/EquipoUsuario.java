@@ -1,6 +1,7 @@
 package org.example;
 
 public class EquipoUsuario {
+<<<<<<< HEAD
 
     private String tipo;
     private String numeroSerie;
@@ -23,4 +24,6 @@ public class EquipoUsuario {
     public String getNombre() {
         return nombre;
     }
+=======
+>>>>>>> e3e2929cf987aaf0588efea2f1e4c18f600e17e4
 }
