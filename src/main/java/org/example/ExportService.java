@@ -194,7 +194,7 @@ public class ExportService {
 
             // Headers
             Row header1 = sheet1.createRow(3);
-            String[] columnas1 = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL"};
+            String[] columnas1 = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR OPTICO"};
             for (int i = 0; i < columnas1.length; i++) {
                 Cell cell = header1.createCell(i);
                 cell.setCellValue(columnas1[i]);
@@ -261,7 +261,19 @@ public class ExportService {
                 Cell cellFirma = row.createCell(5);
                 cellFirma.setCellValue(firma);
                 cellFirma.setCellStyle(cellStyle);
+
+                // Lector Optico
+                String Lector = emp.getEquipos().stream()
+                        .filter(e -> "Lector Optico".equalsIgnoreCase(e.getTipo()))
+                        .map(EquipoUsuario::getNumeroSerie)
+                        .findFirst().orElse("");
+                Cell cellLectorOptico = row.createCell(6);
+                cellLectorOptico.setCellValue(Lector);
+                cellLectorOptico.setCellStyle(cellStyle);
             }
+
+
+
 
             // Ajustar columnas
             for (int i = 0; i < 6; i++) {

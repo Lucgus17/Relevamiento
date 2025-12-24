@@ -6,10 +6,21 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
         body { background:#0f1117; color:#e5e7eb; font-family: system-ui, -apple-system, sans-serif; }
-        h3 { color:#22c55e; }
+
+        h3 {
+            color:#22c55e;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 1.8rem;
+        }
 
         .accordion-item {
             background:#181b23;
@@ -45,7 +56,6 @@
             pointer-events: none;
         }
 
-        /* Reducido minmax de 240px a 160px y cambiado flex-basis para forzar layout horizontal */
         .equipos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -60,13 +70,42 @@
             border-radius: 10px;
             padding: 0.75rem;
             transition: all 0.2s ease;
-            min-width: 0; /* Permite que las tarjetas se reduzcan */
+            min-width: 0;
+            position: relative;
         }
 
         .equipo-card:hover {
             border-color: #22c55e;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+        }
+
+        .equipo-card:hover .btn-trash {
+            opacity: 1;
+        }
+
+        .btn-trash {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 6px;
+            padding: 0.25rem 0.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0;
+            z-index: 5;
+        }
+
+        .btn-trash:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .btn-trash i {
+            font-size: 0.875rem;
         }
 
         .equipo-icon-container {
@@ -92,6 +131,7 @@
         .icon-phone { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
         .icon-camera { background: rgba(234, 179, 8, 0.15); color: #eab308; }
         .icon-firma { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+        .icon-lector { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
         .icon-impresora { background: rgba(249, 115, 22, 0.15); color: #f97316; }
         .icon-escaner { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
 
@@ -124,40 +164,14 @@
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             font-size: 0.813rem;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            line-height: 1.4;
+            max-width: 100%;
         }
 
         .equipo-nombre {
             margin-top: 0.5rem;
-        }
-
-        .categoria-seccion {
-            margin: 1.5rem 0;
-        }
-
-        .categoria-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.75rem;
-            padding: 0.5rem 0;
-            border-bottom: 2px solid #374151;
-        }
-
-        .categoria-titulo {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #9ca3af;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .categoria-count {
-            background: #374151;
-            color: #22c55e;
-            padding: 0.125rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
         }
 
         .estado-vacio {
@@ -200,7 +214,7 @@
                class="form-control form-control-sm w-50"
                placeholder="Nombre del empleado" required>
 
-        <button class="btn btn-success btn-sm">
+        <button type="submit" class="btn btn-success btn-sm">
             <i class="bi bi-person-plus"></i> Agregar
         </button>
 
@@ -234,7 +248,6 @@
                        placeholder="Número de serie" required>
             </div>
 
-            <!-- Campo de nombre visible solo para IMPRESORA -->
             <div class="col-md-3" id="nombreOficinaContainer">
                 <input id="nombreOficina"
                        class="form-control form-control-sm"
@@ -252,11 +265,34 @@
 
 </div>
 
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro que desea eliminar este equipo?
+                <div class="mt-2">
+                    <strong>Serie:</strong> <span id="modalSerial" style="word-break: break-all;"></span>
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     let empleados = [];
     let equiposOficina = [];
+    let eliminarData = { tipo: '', indexEmpleado: -1, indexEquipo: -1, serial: '' };
 
     const iconosEquipo = {
         'CPU': { icon: 'bi-cpu', class: 'icon-cpu' },
@@ -264,16 +300,24 @@
         'Teléfono IP': { icon: 'bi-telephone', class: 'icon-phone' },
         'Cámara': { icon: 'bi-camera-video', class: 'icon-camera' },
         'Firma digital': { icon: 'bi-pen', class: 'icon-firma' },
+        'Lector Optico': { icon: 'bi-qr-code-scan', class: 'icon-lector' },
         'IMPRESORA': { icon: 'bi-printer', class: 'icon-impresora' },
         'ESCANER': { icon: 'bi-upc-scan', class: 'icon-escaner' }
     };
 
-    function getIconoEquipo(tipo) { return iconosEquipo[tipo] || { icon: 'bi-gear', class: 'icon-cpu' }; }
+    function getIconoEquipo(tipo) {
+        return iconosEquipo[tipo] || { icon: 'bi-gear', class: 'icon-cpu' };
+    }
 
-    function renderEquipoCard(eq) {
+    function renderEquipoCard(eq, indexEmpleado = -1, indexEquipo = -1) {
         const icono = getIconoEquipo(eq.tipo);
+        const tipoEliminar = indexEmpleado >= 0 ? 'usuario' : 'oficina';
+
         return `
         <div class="equipo-card">
+            <button class="btn-trash" onclick="prepararEliminar('${tipoEliminar}', ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
             <div class="equipo-icon-container">
                 <div class="equipo-icon ${icono.class}"><i class="bi ${icono.icon}"></i></div>
                 <div class="equipo-tipo">${eq.tipo}</div>
@@ -286,11 +330,36 @@
         </div>`;
     }
 
+    function prepararEliminar(tipo, indexEmpleado, indexEquipo, serial) {
+        eliminarData = { tipo, indexEmpleado, indexEquipo, serial };
+        document.getElementById('modalSerial').textContent = serial;
+        new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+    }
+
+    function confirmarEliminar() {
+        const { tipo, indexEmpleado, indexEquipo } = eliminarData;
+
+        if (tipo === 'usuario') {
+            empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
+            actualizarEquiposEmpleado(indexEmpleado);
+        } else {
+            equiposOficina.splice(indexEquipo, 1);
+            renderOficina();
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+    }
+
     function toggleNombreOficina() {
         const tipo = document.getElementById('tipoOficina').value;
         const container = document.getElementById('nombreOficinaContainer');
         const input = document.getElementById('nombreOficina');
-        if(tipo==='IMPRESORA'){ container.style.display='block'; } else { container.style.display='none'; input.value=''; }
+        if(tipo==='IMPRESORA'){
+            container.style.display='block';
+        } else {
+            container.style.display='none';
+            input.value='';
+        }
     }
 
     function toggleNombreUsuario(select) {
@@ -298,7 +367,12 @@
         const tipo = select.value;
         const container = form.querySelector('.nombre-usuario-container');
         const input = form.querySelector('.nombre-usuario-input');
-        if(tipo==='CPU'){ container.style.display='block'; } else { container.style.display='none'; input.value=''; }
+        if(tipo==='CPU'){
+            container.style.display='block';
+        } else {
+            container.style.display='none';
+            input.value='';
+        }
     }
 
     async function cargarDatos() {
@@ -310,16 +384,22 @@
             equiposOficina = data.equiposOficina || [];
             renderEmpleados();
             renderOficina();
-        } catch(e) { console.error(e); alert('Error cargando datos'); }
+        } catch(e) {
+            console.error(e);
+            alert('Error cargando datos');
+        }
     }
 
     function renderEmpleados() {
         const acc = document.getElementById('accordionEmpleados');
-        const estados = empleados.map((_,i)=>document.getElementById(`emp-${i}`)?.classList.contains('show'));
         acc.innerHTML='';
+
         empleados.forEach((emp,i)=>{
             const equipos = emp.equipos || [];
-            let equiposHtml = equipos.length===0 ? `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>` : `<div class="equipos-grid">${equipos.map(eq=>renderEquipoCard(eq)).join('')}</div>`;
+            let equiposHtml = equipos.length===0 ?
+                `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>` :
+                `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, i, idx)).join('')}</div>`;
+
             acc.innerHTML+=`
             <div class="accordion-item">
                 <span class="badge-contador">${equipos.length} ${equipos.length===1?'equipo':'equipos'}</span>
@@ -331,18 +411,25 @@
                 </h2>
                 <div id="emp-${i}" class="accordion-collapse collapse">
                     <div class="accordion-body">
-                        ${equiposHtml}
+                        <div class="equipos-container">
+                            ${equiposHtml}
+                        </div>
                         <hr>
                         <form onsubmit="agregarEquipoUsuario(event, ${i})" class="row g-2 align-items-end">
                             <div class="col-md-3">
-                                <select class="form-select form-select-sm" onchange="toggleNombreUsuario(this)">
-                                    <option>CPU</option><option>Monitor</option><option>Teléfono IP</option><option>Cámara</option><option>Firma digital</option>
+                                <select class="form-select form-select-sm equipo-tipo-select" onchange="toggleNombreUsuario(this)">
+                                    <option>CPU</option>
+                                    <option>Monitor</option>
+                                    <option>Teléfono IP</option>
+                                    <option>Cámara</option>
+                                    <option>Firma digital</option>
+                                    <option>Lector Optico</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <input class="form-control form-control-sm numero-serie-input" placeholder="Número de serie" required>
                             </div>
-                            <div class="col-md-3 nombre-usuario-container">
+                            <div class="col-md-3 nombre-usuario-container" style="display:block;">
                                 <input class="form-control form-control-sm nombre-usuario-input" placeholder="Nombre (opcional)">
                             </div>
                             <div class="col-md-2">
@@ -353,79 +440,134 @@
                 </div>
             </div>`;
         });
-        estados.forEach((abierto,i)=>{if(abierto){const collapse=document.getElementById(`emp-${i}`);if(collapse)new bootstrap.Collapse(collapse,{show:true});}});
     }
 
-    function agregarEmpleado(e){
+    // NUEVA FUNCIÓN: Solo actualiza los equipos de un empleado específico
+    function actualizarEquiposEmpleado(index) {
+        const equipos = empleados[index].equipos || [];
+        const container = document.querySelector(`#emp-${index} .equipos-container`);
+
+        if (!container) return;
+
+        if (equipos.length === 0) {
+            container.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>`;
+        } else {
+            container.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, index, idx)).join('')}</div>`;
+        }
+
+        // Actualizar badge contador
+        const badge = document.querySelector(`#emp-${index}`).closest('.accordion-item').querySelector('.badge-contador');
+        badge.textContent = `${equipos.length} ${equipos.length===1?'equipo':'equipos'}`;
+    }
+
+    async function agregarEmpleado(e){
         e.preventDefault();
         const input = document.getElementById('nombreEmpleado');
         const nombre = input.value.trim();
         if(!nombre) return;
-        fetch('/oficinas/empleado',{
-            method:'POST',
-            headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            body:'nombre='+encodeURIComponent(nombre)
-        }).then(res=>res.ok?res.json():Promise.reject('Error backend'))
-        .then(emp=>{
-            empleados.push({nombre:emp.nombre,cargo:emp.cargo,equipos:[]});
+
+        try {
+            const res = await fetch('/oficinas/empleado', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'nombre=' + encodeURIComponent(nombre)
+            });
+
+            if(!res.ok) throw new Error('Error en la respuesta');
+
+            // Agregar empleado localmente sin recargar
+            empleados.push({nombre: nombre, cargo: null, equipos: []});
             renderEmpleados();
-            input.value='';
-        }).catch(err=>console.error(err));
+            input.value = '';
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al agregar empleado');
+        }
     }
 
-    function agregarEquipoUsuario(e,index){
+    async function agregarEquipoUsuario(e, index){
         e.preventDefault();
-        const form=e.target;
-        const tipo=form.querySelector('select').value;
-        const serie=form.querySelector('.numero-serie-input').value;
-        const nombre=form.querySelector('.nombre-usuario-input').value;
+        const form = e.target;
+        const selectTipo = form.querySelector('.equipo-tipo-select');
+        const tipo = selectTipo.value;
+        const serie = form.querySelector('.numero-serie-input').value;
+        const nombre = form.querySelector('.nombre-usuario-input').value;
         if(!serie) return;
-        let body=`indexEmpleado=${index}&tipo=${tipo}&numeroSerie=${serie}`;
-        if(nombre) body+=`&nombre=${encodeURIComponent(nombre)}`;
-        fetch('/oficinas/equipo-usuario',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
-        .then(()=>{
-            empleados[index].equipos.push({tipo,numeroSerie:serie,nombre:nombre||null});
-            const collapseBody=document.querySelector(`#emp-${index} .accordion-body`);
-            const formElem=collapseBody.querySelector('form');
-            let equiposHtml = empleados[index].equipos.length===0?`<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>`:`<div class="equipos-grid">${empleados[index].equipos.map(eq=>renderEquipoCard(eq)).join('')}</div>`;
-            collapseBody.innerHTML = equiposHtml + '<hr>' + formElem.outerHTML;
-            const badge = collapseBody.closest('.accordion-item').querySelector('.badge-contador');
-            badge.textContent = `${empleados[index].equipos.length} ${empleados[index].equipos.length===1?'equipo':'equipos'}`;
-            form.reset();
-        });
+
+        try {
+            let body = `indexEmpleado=${index}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}`;
+            if(nombre) body += `&nombre=${encodeURIComponent(nombre)}`;
+
+            const res = await fetch('/oficinas/equipo-usuario', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body
+            });
+
+            if(!res.ok) throw new Error('Error');
+
+            // Agregar equipo localmente
+            empleados[index].equipos.push({tipo, numeroSerie: serie, nombre: nombre || null});
+
+            // SOLO actualizar la sección de equipos, NO todo el acordeón
+            actualizarEquiposEmpleado(index);
+
+            // Limpiar inputs y mantener tipo seleccionado
+            form.querySelector('.numero-serie-input').value = '';
+            form.querySelector('.nombre-usuario-input').value = '';
+            form.querySelector('.numero-serie-input').focus();
+
+        } catch(err) {
+            console.error(err);
+            alert('Error al agregar equipo');
+        }
     }
 
-    function agregarEquipoOficina(e){
+    async function agregarEquipoOficina(e){
         e.preventDefault();
         const tipo = document.getElementById('tipoOficina').value;
         const serie = document.getElementById('serieOficina').value;
         const nombre = document.getElementById('nombreOficina').value;
         if(!serie) return;
-        fetch('/oficinas/equipo-oficina',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`tipo=${tipo}&numeroSerie=${serie}&nombre=${nombre}`})
-        .then(()=>{
-            equiposOficina.push({tipo,numeroSerie:serie,nombre:nombre||null});
-            const div = document.getElementById('listaOficina');
-            if(div.querySelector('.estado-vacio')) div.innerHTML='';
-            const grid = div.querySelector('.equipos-grid') || document.createElement('div');
-            grid.classList.add('equipos-grid');
-            grid.insertAdjacentHTML('beforeend', renderEquipoCard({tipo,numeroSerie:serie,nombre:nombre||null}));
-            if(!div.contains(grid)) div.appendChild(grid);
-            document.getElementById('serieOficina').value='';
-            document.getElementById('nombreOficina').value='';
-        });
+
+        try {
+            const res = await fetch('/oficinas/equipo-oficina', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}`
+            });
+
+            if(!res.ok) throw new Error('Error');
+
+            // Agregar equipo localmente sin recargar
+            equiposOficina.push({tipo, numeroSerie: serie, nombre: nombre || null});
+
+            renderOficina();
+
+            // Limpiar inputs y mantener tipo
+            document.getElementById('serieOficina').value = '';
+            document.getElementById('nombreOficina').value = '';
+            document.getElementById('serieOficina').focus();
+
+        } catch(err) {
+            console.error(err);
+            alert('Error al agregar equipo');
+        }
     }
 
     function renderOficina(){
-        const div=document.getElementById('listaOficina');
-        div.innerHTML='';
-        if(equiposOficina.length===0){
-            div.innerHTML=`<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipamiento cargado</div></div>`;
+        const div = document.getElementById('listaOficina');
+        div.innerHTML = '';
+
+        if(equiposOficina.length === 0){
+            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipamiento cargado</div></div>`;
             return;
         }
-        div.innerHTML=`<div class="equipos-grid">${equiposOficina.map(eq=>renderEquipoCard(eq)).join('')}</div>`;
+
+        div.innerHTML = `<div class="equipos-grid">${equiposOficina.map((eq, idx)=>renderEquipoCard(eq, -1, idx)).join('')}</div>`;
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
+    document.addEventListener('DOMContentLoaded', ()=>{
         toggleNombreOficina();
         cargarDatos();
     });

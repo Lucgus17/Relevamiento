@@ -72,6 +72,12 @@ public class RelevamientoOficina {
                 .filter(eq -> "Firma digital".equalsIgnoreCase(eq.getTipo()))
                 .count();
     }
+    public int getTotalLectorOptico() {
+        return (int) empleados.stream()
+                .flatMap(e -> e.getEquipos().stream())
+                .filter(eq -> "Lector Optico".equalsIgnoreCase(eq.getTipo()))
+                .count();
+    }
 
     public int getTotalImpresoras() {
         return (int) equiposOficina.stream()

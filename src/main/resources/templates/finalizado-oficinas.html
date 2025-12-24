@@ -96,12 +96,12 @@
         .stat-card-equipos { --card-color: #8b5cf6; }
         .stat-card-impresoras { --card-color: #f97316; }
         .stat-card-escaneres { --card-color: #06b6d4; }
-        /* Added colors for new equipment types */
         .stat-card-cpu { --card-color: #6366f1; }
         .stat-card-monitor { --card-color: #8b5cf6; }
         .stat-card-telefono { --card-color: #10b981; }
         .stat-card-camara { --card-color: #ec4899; }
         .stat-card-firma { --card-color: #f59e0b; }
+        .stat-card-lectorOptico { --card-color: #06b6d4; }
 
         .stat-icon-container {
             width: 64px;
@@ -133,7 +133,6 @@
             color: #06b6d4;
         }
 
-        /* Added icon containers for new equipment types */
         .stat-card-cpu .stat-icon-container {
             background: rgba(99, 102, 241, 0.15);
             color: #6366f1;
@@ -157,6 +156,11 @@
         .stat-card-firma .stat-icon-container {
             background: rgba(245, 158, 11, 0.15);
             color: #f59e0b;
+        }
+
+        .stat-card-lectorOptico .stat-icon-container {
+            background: rgba(6, 182, 212, 0.15);
+            color: #06b6d4;
         }
 
         .stat-icon-container i {
@@ -191,12 +195,23 @@
             transition: all 0.3s ease;
             border: none;
             font-size: 1rem;
+            margin: 0.5rem;
+        }
+
+        .btn-inicio {
+            background: #1f2937;
+            color: #e5e7eb;
+        }
+
+        .btn-inicio:hover {
+            background: #374151;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
         }
 
         .btn-volver {
             background: #374151;
             color: #e5e7eb;
-            margin-right: 1rem;
         }
 
         .btn-volver:hover {
@@ -216,7 +231,6 @@
             box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
         }
 
-        /* Added signature section styling */
         .signature-section {
             text-align: center;
             margin-top: 4rem;
@@ -274,7 +288,6 @@
         <p class="subtitle" th:text="${nombreRelevamiento}">Nombre del Relevamiento</p>
     </div>
 
-    <!-- Expanded stats grid to show all equipment types individually -->
     <div class="stats-grid">
         <div class="stat-card stat-card-empleados">
             <div class="stat-icon-container">
@@ -324,6 +337,14 @@
             <div class="stat-value" th:text="${totalFirmas}">0</div>
         </div>
 
+        <div class="stat-card stat-card-lectorOptico">
+            <div class="stat-icon-container">
+                <i class="bi bi-qr-code-scan"></i>
+            </div>
+            <div class="stat-label">Lector Óptico</div>
+            <div class="stat-value" th:text="${totalLectorOptico}">0</div>
+        </div>
+
         <div class="stat-card stat-card-impresoras">
             <div class="stat-icon-container">
                 <i class="bi bi-printer-fill"></i>
@@ -342,6 +363,10 @@
     </div>
 
     <div class="actions-section">
+        <a href="/" class="btn btn-custom btn-inicio">
+            <i class="bi bi-house-fill"></i> Volver al Inicio
+        </a>
+
         <a href="/oficinas/relevamiento" class="btn btn-custom btn-volver">
             <i class="bi bi-arrow-left"></i> Volver al relevamiento
         </a>
@@ -351,7 +376,6 @@
         </a>
     </div>
 
-    <!-- Added signature section at the bottom -->
     <div class="signature-section">
         <div style="text-align: center;">
             Sistema de relevamiento avanzado

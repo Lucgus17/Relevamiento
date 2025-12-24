@@ -6,12 +6,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/oficinas")
 public class OficinaController {
-
 
     // ================= UTIL =================
     private RelevamientoOficina obtenerRelevamiento(HttpSession session) {
@@ -33,6 +34,19 @@ public class OficinaController {
         }
 
         return rel;
+    }
+
+    // ================= API ENDPOINT PARA CARGAR DATOS =================
+    @GetMapping("/api/oficinas/data")
+    @ResponseBody
+    public Map<String, Object> obtenerDatos(HttpSession session) {
+        RelevamientoOficina rel = obtenerRelevamiento(session);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("empleados", rel.getEmpleados());
+        response.put("equiposOficina", rel.getEquiposOficina());
+
+        return response;
     }
 
     // ================= MOSTRAR =================
@@ -64,8 +78,6 @@ public class OficinaController {
 
         return "redirect:/oficinas/relevamiento";
     }
-
-
 
     // ================= AGREGAR EMPLEADO =================
     @PostMapping("/empleado")
@@ -152,6 +164,7 @@ public class OficinaController {
         model.addAttribute("totalTelefonos", rel.getTotalTelefonos());
         model.addAttribute("totalCamaras", rel.getTotalCamaras());
         model.addAttribute("totalFirmas", rel.getTotalFirmas());
+        model.addAttribute("totalLectorOptico", rel.getTotalLectorOptico());
         model.addAttribute("totalImpresoras", rel.getTotalImpresoras());
         model.addAttribute("totalEscaneres", rel.getTotalEscaneres());
 
