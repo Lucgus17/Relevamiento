@@ -1,6 +1,6 @@
 package org.example;
 
-<<<<<<< HEAD
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,7 +49,4 @@ public class Empleado {
         equipos.add(eq);
     }
 }
-=======
-public class Empleado {
-}
->>>>>>> e3e2929cf987aaf0588efea2f1e4c18f600e17e4
+
