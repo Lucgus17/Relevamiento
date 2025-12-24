@@ -56,6 +56,10 @@
             pointer-events: none;
         }
 
+        .accordion-button {
+            padding-right: 6rem;
+        }
+
         .equipos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -178,10 +182,25 @@
             background: rgba(249, 115, 22, 0.1);
             border: 1px dashed #f97316;
             border-radius: 8px;
-            padding: 1.5rem;
+            padding: 1rem;
             text-align: center;
             color: #f97316;
         }
+
+        .estado-vacio i {
+            font-size: 1.5rem;
+        }
+
+        .estado-vacio div {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .estado-vacio {
+    max-width: 1100px;   /* probá 250px / 300px / 350px */
+    margin: 0 auto;     /* lo centra horizontalmente */
+}
+
 
         .box {
             background:#111827;
@@ -397,7 +416,7 @@
         empleados.forEach((emp,i)=>{
             const equipos = emp.equipos || [];
             let equiposHtml = equipos.length===0 ?
-                `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>` :
+                `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipos asignados</div></div>` :
                 `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, i, idx)).join('')}</div>`;
 
             acc.innerHTML+=`
@@ -450,7 +469,7 @@
         if (!container) return;
 
         if (equipos.length === 0) {
-            container.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipos asignados</div></div>`;
+            container.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipos asignados</div></div>`;
         } else {
             container.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, index, idx)).join('')}</div>`;
         }
@@ -560,7 +579,7 @@
         div.innerHTML = '';
 
         if(equiposOficina.length === 0){
-            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox" style="font-size:2rem;"></i><div class="mt-2">Sin equipamiento cargado</div></div>`;
+            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipamiento cargado</div></div>`;
             return;
         }
 
