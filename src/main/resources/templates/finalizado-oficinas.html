@@ -52,12 +52,27 @@
         }
 
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-            animation: fadeInUp 0.6s ease-out 0.2s both;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* ← 3 columnas fijas */
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+        justify-items: center;
         }
+
+    /* Para pantallas medianas */
+    @media (max-width: 992px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* Para móviles */
+    @media (max-width: 576px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 
         .stat-card {
             background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
@@ -68,6 +83,8 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            width: 100%;
+            max-width: 280px;
         }
 
         .stat-card::before {

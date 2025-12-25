@@ -166,6 +166,7 @@ public class ExportService {
             cellStyle.setBorderLeft(BorderStyle.THIN);
             cellStyle.setBorderRight(BorderStyle.THIN);
             cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            cellStyle.setWrapText(true); // ← IMPORTANTE: Permitir múltiples líneas
 
             CellStyle empleadoStyle = wb.createCellStyle();
             empleadoStyle.cloneStyleFrom(cellStyle);
@@ -183,24 +184,25 @@ public class ExportService {
             Cell tituloCell1 = titulo1.createCell(0);
             tituloCell1.setCellValue(rel.getNombre() + " - Empleados");
             tituloCell1.setCellStyle(tituloStyle);
-            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 5));
+            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
 
             // Fecha
             Row fecha1 = sheet1.createRow(1);
             fecha1.createCell(0).setCellValue(
                     "Fecha: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
             );
-            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 5));
+            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
 
             // Headers
             Row header1 = sheet1.createRow(3);
-            String[] columnas1 = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR OPTICO"};
+            String[] columnas1 = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO"};
             for (int i = 0; i < columnas1.length; i++) {
                 Cell cell = header1.createCell(i);
                 cell.setCellValue(columnas1[i]);
                 cell.setCellStyle(headerStyle);
             }
 
+            // Data - Empleados
             // Data - Empleados
             int rowNum = 4;
             for (Empleado emp : rel.getEmpleados()) {
@@ -212,71 +214,124 @@ public class ExportService {
                 cellNombre.setCellStyle(empleadoStyle);
 
                 // CPU (con nombre si existe)
-                String cpu = emp.getEquipos().stream()
+                List<EquipoUsuario> cpus = emp.getEquipos().stream()
                         .filter(e -> "CPU".equalsIgnoreCase(e.getTipo()))
-                        .map(e -> {
-                            String val = e.getNumeroSerie();
-                            if (e.getNombre() != null && !e.getNombre().isEmpty()) {
-                                val += " (" + e.getNombre() + ")";
-                            }
-                            return val;
-                        })
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String cpu = "";
+                if (cpus.size() == 1) {
+                    EquipoUsuario c = cpus.get(0);
+                    cpu = c.getNumeroSerie();
+                    if (c.getNombre() != null && !c.getNombre().isEmpty()) {
+                        cpu += " (" + c.getNombre() + ")";
+                    }
+                } else if (cpus.size() > 1) {
+                    for (int i = 0; i < cpus.size(); i++) {
+                        EquipoUsuario c = cpus.get(i);
+                        cpu += "CPU" + (i + 1) + ": " + c.getNumeroSerie();
+                        if (c.getNombre() != null && !c.getNombre().isEmpty()) {
+                            cpu += " (" + c.getNombre() + ")";
+                        }
+                        if (i < cpus.size() - 1) cpu += "\n";
+                    }
+                }
                 Cell cellCPU = row.createCell(1);
                 cellCPU.setCellValue(cpu);
                 cellCPU.setCellStyle(cellStyle);
 
                 // Monitor
-                String monitor = emp.getEquipos().stream()
+                List<EquipoUsuario> monitores = emp.getEquipos().stream()
                         .filter(e -> "Monitor".equalsIgnoreCase(e.getTipo()))
-                        .map(EquipoUsuario::getNumeroSerie)
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String monitor = "";
+                if (monitores.size() == 1) {
+                    monitor = monitores.get(0).getNumeroSerie();
+                } else if (monitores.size() > 1) {
+                    for (int i = 0; i < monitores.size(); i++) {
+                        monitor += "Monitor" + (i + 1) + ": " + monitores.get(i).getNumeroSerie();
+                        if (i < monitores.size() - 1) monitor += "\n";
+                    }
+                }
                 Cell cellMonitor = row.createCell(2);
                 cellMonitor.setCellValue(monitor);
                 cellMonitor.setCellStyle(cellStyle);
 
                 // Teléfono IP
-                String telefono = emp.getEquipos().stream()
+                List<EquipoUsuario> telefonos = emp.getEquipos().stream()
                         .filter(e -> "Teléfono IP".equalsIgnoreCase(e.getTipo()))
-                        .map(EquipoUsuario::getNumeroSerie)
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String telefono = "";
+                if (telefonos.size() == 1) {
+                    telefono = telefonos.get(0).getNumeroSerie();
+                } else if (telefonos.size() > 1) {
+                    for (int i = 0; i < telefonos.size(); i++) {
+                        telefono += "Teléfono" + (i + 1) + ": " + telefonos.get(i).getNumeroSerie();
+                        if (i < telefonos.size() - 1) telefono += "\n";
+                    }
+                }
                 Cell cellTelefono = row.createCell(3);
                 cellTelefono.setCellValue(telefono);
                 cellTelefono.setCellStyle(cellStyle);
 
                 // Cámara
-                String camara = emp.getEquipos().stream()
+                List<EquipoUsuario> camaras = emp.getEquipos().stream()
                         .filter(e -> "Cámara".equalsIgnoreCase(e.getTipo()))
-                        .map(EquipoUsuario::getNumeroSerie)
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String camara = "";
+                if (camaras.size() == 1) {
+                    camara = camaras.get(0).getNumeroSerie();
+                } else if (camaras.size() > 1) {
+                    for (int i = 0; i < camaras.size(); i++) {
+                        camara += "Cámara" + (i + 1) + ": " + camaras.get(i).getNumeroSerie();
+                        if (i < camaras.size() - 1) camara += "\n";
+                    }
+                }
                 Cell cellCamara = row.createCell(4);
                 cellCamara.setCellValue(camara);
                 cellCamara.setCellStyle(cellStyle);
 
                 // Firma digital
-                String firma = emp.getEquipos().stream()
+                List<EquipoUsuario> firmas = emp.getEquipos().stream()
                         .filter(e -> "Firma digital".equalsIgnoreCase(e.getTipo()))
-                        .map(EquipoUsuario::getNumeroSerie)
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String firma = "";
+                if (firmas.size() == 1) {
+                    firma = firmas.get(0).getNumeroSerie();
+                } else if (firmas.size() > 1) {
+                    for (int i = 0; i < firmas.size(); i++) {
+                        firma += "Firma" + (i + 1) + ": " + firmas.get(i).getNumeroSerie();
+                        if (i < firmas.size() - 1) firma += "\n";
+                    }
+                }
                 Cell cellFirma = row.createCell(5);
                 cellFirma.setCellValue(firma);
                 cellFirma.setCellStyle(cellStyle);
 
                 // Lector Optico
-                String Lector = emp.getEquipos().stream()
+                List<EquipoUsuario> lectores = emp.getEquipos().stream()
                         .filter(e -> "Lector Optico".equalsIgnoreCase(e.getTipo()))
-                        .map(EquipoUsuario::getNumeroSerie)
-                        .findFirst().orElse("");
+                        .collect(java.util.stream.Collectors.toList());
+
+                String lector = "";
+                if (lectores.size() == 1) {
+                    lector = lectores.get(0).getNumeroSerie();
+                } else if (lectores.size() > 1) {
+                    for (int i = 0; i < lectores.size(); i++) {
+                        lector += "Lector" + (i + 1) + ": " + lectores.get(i).getNumeroSerie();
+                        if (i < lectores.size() - 1) lector += "\n";
+                    }
+                }
                 Cell cellLectorOptico = row.createCell(6);
-                cellLectorOptico.setCellValue(Lector);
+                cellLectorOptico.setCellValue(lector);
                 cellLectorOptico.setCellStyle(cellStyle);
             }
 
-
-
-
-            // Ajustar columnas
-            for (int i = 0; i < 6; i++) {
+            // Ajustar columnas (CORREGIDO: 7 columnas en total)
+            for (int i = 0; i < 7; i++) {
                 sheet1.autoSizeColumn(i);
                 sheet1.setColumnWidth(i, sheet1.getColumnWidth(i) + 1000);
             }
