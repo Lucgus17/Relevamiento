@@ -22,6 +22,8 @@
 
     <properties>
         <java.version>21</java.version>
+        <!-- Esto asegura que Spring no bloquee la interfaz gráfica -->
+        <spring.boot.mainclass>org.example.Inicializador</spring.boot.mainclass>
     </properties>
 
     <dependencies>
@@ -77,6 +79,11 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- Define explícitamente qué clase inicia la interfaz -->
+                    <mainClass>org.example.Inicializador</mainClass>
+                    <layout>JAR</layout>
+                </configuration>
             </plugin>
         </plugins>
     </build>

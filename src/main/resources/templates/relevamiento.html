@@ -544,11 +544,13 @@
                 new bootstrap.Modal(document.getElementById('modalSugerencia')).show();
                 input.value = '';
             } else {
+                input.value = '';
                 location.reload();
             }
         } catch(e) {
             console.error(e);
             alert('Error al agregar serial');
+            input.value = '';
         }
     });
 

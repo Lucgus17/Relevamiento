@@ -185,6 +185,8 @@
             padding: 1rem;
             text-align: center;
             color: #f97316;
+            max-width: 1100px;
+            margin: 0 auto;
         }
 
         .estado-vacio i {
@@ -195,12 +197,6 @@
             font-size: 0.875rem;
             margin-top: 0.5rem;
         }
-
-        .estado-vacio {
-    max-width: 1100px;   /* probá 250px / 300px / 350px */
-    margin: 0 auto;     /* lo centra horizontalmente */
-}
-
 
         .box {
             background:#111827;
@@ -355,19 +351,47 @@
         new bootstrap.Modal(document.getElementById('modalEliminar')).show();
     }
 
-    function confirmarEliminar() {
+    // ============ FUNCIÓN CORREGIDA ============
+    async function confirmarEliminar() {
         const { tipo, indexEmpleado, indexEquipo } = eliminarData;
 
-        if (tipo === 'usuario') {
-            empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
-            actualizarEquiposEmpleado(indexEmpleado);
-        } else {
-            equiposOficina.splice(indexEquipo, 1);
-            renderOficina();
-        }
+        try {
+            let url, body;
 
-        bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+            if (tipo === 'usuario') {
+                url = '/oficinas/eliminar-equipo-usuario';
+                body = `indexEmpleado=${indexEmpleado}&indexEquipo=${indexEquipo}`;
+            } else {
+                url = '/oficinas/eliminar-equipo-oficina';
+                body = `indexEquipo=${indexEquipo}`;
+            }
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: body
+            });
+
+            if (!res.ok) throw new Error('Error al eliminar');
+
+            // Ahora sí eliminar del array local
+            if (tipo === 'usuario') {
+                empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
+                actualizarEquiposEmpleado(indexEmpleado);
+            } else {
+                equiposOficina.splice(indexEquipo, 1);
+                renderOficina();
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al eliminar el equipo');
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+        }
     }
+    // ============================================
 
     function toggleNombreOficina() {
         const tipo = document.getElementById('tipoOficina').value;
@@ -461,7 +485,6 @@
         });
     }
 
-    // NUEVA FUNCIÓN: Solo actualiza los equipos de un empleado específico
     function actualizarEquiposEmpleado(index) {
         const equipos = empleados[index].equipos || [];
         const container = document.querySelector(`#emp-${index} .equipos-container`);
@@ -474,7 +497,6 @@
             container.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, index, idx)).join('')}</div>`;
         }
 
-        // Actualizar badge contador
         const badge = document.querySelector(`#emp-${index}`).closest('.accordion-item').querySelector('.badge-contador');
         badge.textContent = `${equipos.length} ${equipos.length===1?'equipo':'equipos'}`;
     }
@@ -494,7 +516,6 @@
 
             if(!res.ok) throw new Error('Error en la respuesta');
 
-            // Agregar empleado localmente sin recargar
             empleados.push({nombre: nombre, cargo: null, equipos: []});
             renderEmpleados();
             input.value = '';
@@ -525,13 +546,9 @@
 
             if(!res.ok) throw new Error('Error');
 
-            // Agregar equipo localmente
             empleados[index].equipos.push({tipo, numeroSerie: serie, nombre: nombre || null});
-
-            // SOLO actualizar la sección de equipos, NO todo el acordeón
             actualizarEquiposEmpleado(index);
 
-            // Limpiar inputs y mantener tipo seleccionado
             form.querySelector('.numero-serie-input').value = '';
             form.querySelector('.nombre-usuario-input').value = '';
             form.querySelector('.numero-serie-input').focus();
@@ -558,12 +575,9 @@
 
             if(!res.ok) throw new Error('Error');
 
-            // Agregar equipo localmente sin recargar
             equiposOficina.push({tipo, numeroSerie: serie, nombre: nombre || null});
-
             renderOficina();
 
-            // Limpiar inputs y mantener tipo
             document.getElementById('serieOficina').value = '';
             document.getElementById('nombreOficina').value = '';
             document.getElementById('serieOficina').focus();

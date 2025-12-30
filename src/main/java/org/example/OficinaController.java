@@ -1,12 +1,12 @@
 package org.example;
 
 
-import jakarta.servlet.http.HttpSession;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
+import jakarta.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,6 +145,47 @@ public class OficinaController {
         rel.getEquiposOficina().add(
                 new EquipoOficina(tipo, numeroSerie.trim(), nombre)
         );
+
+        return "redirect:/oficinas/relevamiento";
+    }
+
+    // ================= ELIMINAR EQUIPO USUARIO =================
+    @PostMapping("/eliminar-equipo-usuario")
+    public String eliminarEquipoUsuario(
+            @RequestParam int indexEmpleado,
+            @RequestParam int indexEquipo,
+            HttpSession session
+    ) {
+        RelevamientoOficina rel = obtenerRelevamiento(session);
+
+        if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            return "redirect:/oficinas/relevamiento";
+        }
+
+        List<EquipoUsuario> equipos = rel.getEmpleados().get(indexEmpleado).getEquipos();
+
+        if (indexEquipo < 0 || indexEquipo >= equipos.size()) {
+            return "redirect:/oficinas/relevamiento";
+        }
+
+        equipos.remove(indexEquipo);
+
+        return "redirect:/oficinas/relevamiento";
+    }
+
+    // ================= ELIMINAR EQUIPO OFICINA =================
+    @PostMapping("/eliminar-equipo-oficina")
+    public String eliminarEquipoOficina(
+            @RequestParam int indexEquipo,
+            HttpSession session
+    ) {
+        RelevamientoOficina rel = obtenerRelevamiento(session);
+
+        if (indexEquipo < 0 || indexEquipo >= rel.getEquiposOficina().size()) {
+            return "redirect:/oficinas/relevamiento";
+        }
+
+        rel.getEquiposOficina().remove(indexEquipo);
 
         return "redirect:/oficinas/relevamiento";
     }
