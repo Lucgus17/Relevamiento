@@ -119,7 +119,6 @@ public class ExportService {
             // Ajustar columnas
             for (int i = 0; i < 3; i++) {
                 sheet.autoSizeColumn(i);
-                // Agregar un poco más de espacio
                 sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1000);
             }
 
@@ -133,10 +132,12 @@ public class ExportService {
     }
 
     // =====================================================================
-    // EXPORTAR EXCEL - OFICINAS (Empleados y Equipos)
+    // EXPORTAR EXCEL - OFICINAS (UNA SOLA HOJA)
     // =====================================================================
     public static byte[] generarExcelOficinas(RelevamientoOficina rel) {
         try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+            Sheet sheet = wb.createSheet("Relevamiento Completo");
 
             // ================= ESTILOS =================
             Font tituloFont = wb.createFont();
@@ -166,7 +167,7 @@ public class ExportService {
             cellStyle.setBorderLeft(BorderStyle.THIN);
             cellStyle.setBorderRight(BorderStyle.THIN);
             cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-            cellStyle.setWrapText(true); // ← IMPORTANTE: Permitir múltiples líneas
+            cellStyle.setWrapText(true);
 
             CellStyle empleadoStyle = wb.createCellStyle();
             empleadoStyle.cloneStyleFrom(cellStyle);
@@ -176,44 +177,42 @@ public class ExportService {
             empleadoStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             empleadoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ================= HOJA 1: EMPLEADOS Y SUS EQUIPOS =================
-            Sheet sheet1 = wb.createSheet("Empleados");
+            // ================= TÍTULO PRINCIPAL =================
+            Row titulo = sheet.createRow(0);
+            Cell tituloCell = titulo.createCell(0);
+            tituloCell.setCellValue(rel.getNombre() + " - Relevamiento Completo");
+            tituloCell.setCellStyle(tituloStyle);
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
 
-            // Título
-            Row titulo1 = sheet1.createRow(0);
-            Cell tituloCell1 = titulo1.createCell(0);
-            tituloCell1.setCellValue(rel.getNombre() + " - Empleados");
-            tituloCell1.setCellStyle(tituloStyle);
-            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
-
-            // Fecha
-            Row fecha1 = sheet1.createRow(1);
-            fecha1.createCell(0).setCellValue(
+            // ================= FECHA =================
+            Row fecha = sheet.createRow(1);
+            fecha.createCell(0).setCellValue(
                     "Fecha: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
             );
-            sheet1.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
 
-            // Headers
-            Row header1 = sheet1.createRow(3);
-            String[] columnas1 = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO"};
-            for (int i = 0; i < columnas1.length; i++) {
-                Cell cell = header1.createCell(i);
-                cell.setCellValue(columnas1[i]);
+            // ================= SECCIÓN 1: EMPLEADOS Y SUS EQUIPOS =================
+            int rowNum = 3;
+
+            // Header Empleados
+            Row headerEmpleados = sheet.createRow(rowNum++);
+            String[] columnasEmpleados = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO"};
+            for (int i = 0; i < columnasEmpleados.length; i++) {
+                Cell cell = headerEmpleados.createCell(i);
+                cell.setCellValue(columnasEmpleados[i]);
                 cell.setCellStyle(headerStyle);
             }
 
             // Data - Empleados
-            // Data - Empleados
-            int rowNum = 4;
             for (Empleado emp : rel.getEmpleados()) {
-                Row row = sheet1.createRow(rowNum++);
+                Row row = sheet.createRow(rowNum++);
 
-                // Nombre del empleado con estilo especial
+                // Nombre del empleado
                 Cell cellNombre = row.createCell(0);
                 cellNombre.setCellValue(emp.getNombre());
                 cellNombre.setCellStyle(empleadoStyle);
 
-                // CPU (con nombre si existe)
+                // CPU
                 List<EquipoUsuario> cpus = emp.getEquipos().stream()
                         .filter(e -> "CPU".equalsIgnoreCase(e.getTipo()))
                         .collect(java.util.stream.Collectors.toList());
@@ -311,7 +310,7 @@ public class ExportService {
                 cellFirma.setCellValue(firma);
                 cellFirma.setCellStyle(cellStyle);
 
-                // Lector Optico
+                // Lector Óptico
                 List<EquipoUsuario> lectores = emp.getEquipos().stream()
                         .filter(e -> "Lector Optico".equalsIgnoreCase(e.getTipo()))
                         .collect(java.util.stream.Collectors.toList());
@@ -330,42 +329,21 @@ public class ExportService {
                 cellLectorOptico.setCellStyle(cellStyle);
             }
 
-            // Ajustar columnas (CORREGIDO: 7 columnas en total)
-            for (int i = 0; i < 7; i++) {
-                sheet1.autoSizeColumn(i);
-                sheet1.setColumnWidth(i, sheet1.getColumnWidth(i) + 1000);
-            }
+            // ================= SEPARADOR =================
+            rowNum++; // Línea en blanco
 
-            // ================= HOJA 2: EQUIPOS DE OFICINA =================
-            Sheet sheet2 = wb.createSheet("Equipos de Oficina");
-
-            // Título
-            Row titulo2 = sheet2.createRow(0);
-            Cell tituloCell2 = titulo2.createCell(0);
-            tituloCell2.setCellValue(rel.getNombre() + " - Equipos de Oficina");
-            tituloCell2.setCellStyle(tituloStyle);
-            sheet2.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 2));
-
-            // Fecha
-            Row fecha2 = sheet2.createRow(1);
-            fecha2.createCell(0).setCellValue(
-                    "Fecha: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-            );
-            sheet2.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 2));
-
-            // Headers
-            Row header2 = sheet2.createRow(3);
-            String[] columnas2 = {"TIPO", "NÚMERO DE SERIE", "NOMBRE"};
-            for (int i = 0; i < columnas2.length; i++) {
-                Cell cell = header2.createCell(i);
-                cell.setCellValue(columnas2[i]);
+            // ================= SECCIÓN 2: EQUIPOS DE OFICINA =================
+            Row headerOficina = sheet.createRow(rowNum++);
+            String[] columnasOficina = {"TIPO", "NÚMERO DE SERIE", "NOMBRE"};
+            for (int i = 0; i < columnasOficina.length; i++) {
+                Cell cell = headerOficina.createCell(i);
+                cell.setCellValue(columnasOficina[i]);
                 cell.setCellStyle(headerStyle);
             }
 
             // Data - Equipos de Oficina
-            rowNum = 4;
             for (EquipoOficina eq : rel.getEquiposOficina()) {
-                Row row = sheet2.createRow(rowNum++);
+                Row row = sheet.createRow(rowNum++);
 
                 Cell cellTipo = row.createCell(0);
                 cellTipo.setCellValue(eq.getTipo());
@@ -381,9 +359,9 @@ public class ExportService {
             }
 
             // Ajustar columnas
-            for (int i = 0; i < 3; i++) {
-                sheet2.autoSizeColumn(i);
-                sheet2.setColumnWidth(i, sheet2.getColumnWidth(i) + 1000);
+            for (int i = 0; i < 7; i++) {
+                sheet.autoSizeColumn(i);
+                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1000);
             }
 
             wb.write(out);
@@ -396,7 +374,7 @@ public class ExportService {
     }
 
     // =====================================================================
-    // UTILIDAD - Leer empleados desde Excel (placeholder)
+    // UTILIDAD - Leer empleados desde Excel
     // =====================================================================
     public static List<Empleado> leerEmpleadosDesdeExcel(MultipartFile archivo) {
         List<Empleado> empleados = new ArrayList<>();
@@ -404,7 +382,6 @@ public class ExportService {
         try (Workbook workbook = WorkbookFactory.create(archivo.getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Saltar header (row 0)
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;

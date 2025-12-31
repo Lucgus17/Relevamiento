@@ -2,6 +2,9 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Relevamiento de Oficinas</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -34,6 +37,7 @@
             background:#181b23;
             color:#e5e7eb;
             font-weight:500;
+            padding-right: 8rem;
         }
 
         .accordion-button:not(.collapsed) {
@@ -44,20 +48,46 @@
         .badge-contador {
             position: absolute;
             top: 50%;
-            right: 1rem;
+            right: 4rem;
             transform: translateY(-50%);
-            background: #22c55e;
-            color: #0f1117;
             padding: 0.25rem 0.75rem;
             border-radius: 12px;
             font-size: 0.75rem;
             font-weight: 600;
             z-index: 10;
             pointer-events: none;
+            transition: all 0.3s ease;
         }
 
-        .accordion-button {
-            padding-right: 6rem;
+        .badge-sin-equipos {
+            background: #6b7280;
+            color: #f3f4f6;
+        }
+
+        .badge-con-equipos {
+            background: #22c55e;
+            color: #0f1117;
+        }
+
+        .btn-eliminar-empleado {
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 6px;
+            padding: 0.35rem 0.65rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .btn-eliminar-empleado:hover {
+            background: #dc2626;
+            transform: translateY(-50%) scale(1.1);
         }
 
         .equipos-grid {
@@ -280,12 +310,12 @@
 
 </div>
 
-<!-- Modal Eliminar -->
-<div class="modal fade" id="modalEliminar" tabindex="-1">
+<!-- Modal Eliminar Equipo -->
+<div class="modal fade" id="modalEliminarEquipo" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-light border-secondary">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <h5 class="modal-title">Confirmar Eliminación de Equipo</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -296,7 +326,33 @@
             </div>
             <div class="modal-footer border-secondary">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="confirmarEliminar()">Eliminar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminarEquipo()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar Empleado -->
+<div class="modal fade" id="modalEliminarEmpleado" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Confirmar Eliminación de Empleado</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar este empleado?</p>
+                <div class="mt-2">
+                    <strong>Empleado:</strong> <span id="modalNombreEmpleado"></span>
+                </div>
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Se eliminarán también todos los equipos asignados a este empleado.
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminarEmpleado()">Eliminar</button>
             </div>
         </div>
     </div>
@@ -307,7 +363,7 @@
 <script>
     let empleados = [];
     let equiposOficina = [];
-    let eliminarData = { tipo: '', indexEmpleado: -1, indexEquipo: -1, serial: '' };
+    let eliminarData = { tipo: '', indexEmpleado: -1, indexEquipo: -1, serial: '', nombre: '' };
 
     const iconosEquipo = {
         'CPU': { icon: 'bi-cpu', class: 'icon-cpu' },
@@ -330,7 +386,7 @@
 
         return `
         <div class="equipo-card">
-            <button class="btn-trash" onclick="prepararEliminar('${tipoEliminar}', ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
+            <button class="btn-trash" onclick="prepararEliminarEquipo('${tipoEliminar}', ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
                 <i class="bi bi-trash3-fill"></i>
             </button>
             <div class="equipo-icon-container">
@@ -345,14 +401,19 @@
         </div>`;
     }
 
-    function prepararEliminar(tipo, indexEmpleado, indexEquipo, serial) {
-        eliminarData = { tipo, indexEmpleado, indexEquipo, serial };
+    function prepararEliminarEquipo(tipo, indexEmpleado, indexEquipo, serial) {
+        eliminarData = { tipo, indexEmpleado, indexEquipo, serial, nombre: '' };
         document.getElementById('modalSerial').textContent = serial;
-        new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+        new bootstrap.Modal(document.getElementById('modalEliminarEquipo')).show();
     }
 
-    // ============ FUNCIÓN CORREGIDA ============
-    async function confirmarEliminar() {
+    function prepararEliminarEmpleado(index, nombre) {
+        eliminarData = { tipo: 'empleado', indexEmpleado: index, indexEquipo: -1, serial: '', nombre };
+        document.getElementById('modalNombreEmpleado').textContent = nombre;
+        new bootstrap.Modal(document.getElementById('modalEliminarEmpleado')).show();
+    }
+
+    async function confirmarEliminarEquipo() {
         const { tipo, indexEmpleado, indexEquipo } = eliminarData;
 
         try {
@@ -374,7 +435,6 @@
 
             if (!res.ok) throw new Error('Error al eliminar');
 
-            // Ahora sí eliminar del array local
             if (tipo === 'usuario') {
                 empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
                 actualizarEquiposEmpleado(indexEmpleado);
@@ -383,15 +443,43 @@
                 renderOficina();
             }
 
-            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarEquipo')).hide();
 
         } catch(err) {
             console.error('Error:', err);
             alert('Error al eliminar el equipo');
-            bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarEquipo')).hide();
         }
     }
-    // ============================================
+
+    async function confirmarEliminarEmpleado() {
+        const { indexEmpleado } = eliminarData;
+
+        try {
+            const res = await fetch('/oficinas/eliminar-empleado', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `indexEmpleado=${indexEmpleado}`
+            });
+
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            empleados.splice(indexEmpleado, 1);
+            renderEmpleados();
+
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarEmpleado')).hide();
+
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al eliminar el empleado');
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarEmpleado')).hide();
+        }
+    }
 
     function toggleNombreOficina() {
         const tipo = document.getElementById('tipoOficina').value;
@@ -420,7 +508,15 @@
 
     async function cargarDatos() {
         try {
-            const res = await fetch('/api/oficinas/data');
+            // Agregar timestamp para evitar cache
+            const timestamp = new Date().getTime();
+            const res = await fetch('/api/oficinas/data?t=' + timestamp, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
             if(!res.ok) throw new Error('Error backend');
             const data = await res.json();
             empleados = data.empleados || [];
@@ -428,8 +524,9 @@
             renderEmpleados();
             renderOficina();
         } catch(e) {
-            console.error(e);
-            alert('Error cargando datos');
+            console.error('Error al cargar datos:', e);
+            // Reintentar después de 500ms
+            setTimeout(cargarDatos, 500);
         }
     }
 
@@ -439,13 +536,20 @@
 
         empleados.forEach((emp,i)=>{
             const equipos = emp.equipos || [];
+            const tieneEquipos = equipos.length > 0;
+            const badgeClass = tieneEquipos ? 'badge-con-equipos' : 'badge-sin-equipos';
+            const badgeText = equipos.length === 1 ? 'equipo' : 'equipos';
+
             let equiposHtml = equipos.length===0 ?
                 `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipos asignados</div></div>` :
                 `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, i, idx)).join('')}</div>`;
 
             acc.innerHTML+=`
             <div class="accordion-item">
-                <span class="badge-contador">${equipos.length} ${equipos.length===1?'equipo':'equipos'}</span>
+                <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
+                <button class="btn-eliminar-empleado" onclick="prepararEliminarEmpleado(${i}, '${emp.nombre.replace(/'/g, "\\'")}')">
+                    <i class="bi bi-trash3"></i>
+                </button>
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#emp-${i}">
                         <i class="bi bi-person"></i> <span style="margin-left:0.5rem;">${emp.nombre}</span>
@@ -498,7 +602,11 @@
         }
 
         const badge = document.querySelector(`#emp-${index}`).closest('.accordion-item').querySelector('.badge-contador');
-        badge.textContent = `${equipos.length} ${equipos.length===1?'equipo':'equipos'}`;
+        const tieneEquipos = equipos.length > 0;
+        const badgeText = equipos.length === 1 ? 'equipo' : 'equipos';
+
+        badge.className = 'badge-contador ' + (tieneEquipos ? 'badge-con-equipos' : 'badge-sin-equipos');
+        badge.textContent = `${equipos.length} ${badgeText}`;
     }
 
     async function agregarEmpleado(e){
@@ -603,6 +711,14 @@
     document.addEventListener('DOMContentLoaded', ()=>{
         toggleNombreOficina();
         cargarDatos();
+    });
+
+    // ⭐ CARGAR DATOS CUANDO SE VUELVE CON LA FLECHA DEL NAVEGADOR
+    window.addEventListener('pageshow', function(event) {
+        // Si la página se carga desde el cache (al volver con la flecha)
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            cargarDatos();
+        }
     });
 </script>
 

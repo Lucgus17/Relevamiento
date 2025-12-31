@@ -15,13 +15,18 @@ import java.util.List;
 @Controller
 public class HomeController {
 
-    private final Relevamiento relevamiento = new Relevamiento();
-
     // ========================================================================
     // INICIO
     // ========================================================================
     @GetMapping("/")
-    public String inicio() {
+    public String inicio(HttpSession session) {
+        // Limpiar relevamientos anteriores cuando se vuelve a inicio
+        session.removeAttribute("relevamientoBienes");
+        session.removeAttribute("relevamientoOficina");
+        session.removeAttribute("nombreRelevamiento");
+        session.removeAttribute("ultimoSerial");
+        session.removeAttribute("relevamientoActivo");
+
         return "index";
     }
 
@@ -57,8 +62,13 @@ public class HomeController {
 
         // ===================== BIENES =====================
         List<String> seriales = ExcelService.leerSeriales(archivo);
+
+        // ⚠️ CREAR NUEVA INSTANCIA EN LUGAR DE USAR SINGLETON
+        Relevamiento relevamiento = new Relevamiento();
         relevamiento.cargarSeriales(seriales);
 
+        // Guardar en sesión
+        session.setAttribute("relevamientoBienes", relevamiento);
         session.setAttribute("relevamientoActivo", true);
         session.setAttribute("ultimoSerial", null);
 
@@ -71,6 +81,12 @@ public class HomeController {
 
     @GetMapping("/relevamiento")
     public String mostrarRelevamiento(Model model, HttpSession session) {
+        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+
+        if (relevamiento == null) {
+            return "redirect:/";
+        }
+
         model.addAttribute("todosLosSeriales", relevamiento.getNumeroSerialEsperado());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado());
         model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante());
@@ -90,15 +106,21 @@ public class HomeController {
     ) {
         Map<String, String> response = new HashMap<>();
 
+        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+
+        if (relevamiento == null) {
+            response.put("error", "No hay relevamiento activo");
+            return response;
+        }
+
+        String serialNormalizado = serial.trim().toUpperCase();
+
         if ("encontrado".equals(accion)) {
-
             relevamiento.marcarComoEncontrado(serial);
-
             session.setAttribute("ultimoSerial", serial);
             response.put("serialProcesado", serial);
             return response;
         }
-
 
         else if ("noInventariado".equals(accion)) {
             // Usuario rechazó la sugerencia, agregar como sobrante
@@ -106,6 +128,21 @@ public class HomeController {
             response.put("serialProcesado", serial);
 
         } else {
+            // VERIFICAR SI YA EXISTE EN ENCONTRADOS O SOBRANTES
+            boolean yaEncontrado = relevamiento.getNumeroSerialEncontrado().stream()
+                    .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+            boolean yaSobrante = relevamiento.getNumeroSerialSobrante().stream()
+                    .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+            if (yaEncontrado || yaSobrante) {
+                // Ya existe, solo resaltarlo
+                response.put("yaExiste", "true");
+                response.put("serialProcesado", serial);
+                session.setAttribute("ultimoSerial", serial);
+                return response;
+            }
+
             // Procesamiento normal con lógica de Levenshtein
             String sugerencia = relevamiento.procesarInputConSugerencia(serial);
 
@@ -123,22 +160,41 @@ public class HomeController {
         return response;
     }
 
-    @GetMapping("/eliminar")
-    public String eliminarSerial(@RequestParam String serial) {
+    @PostMapping("/eliminar-serial")
+    @ResponseBody
+    public Map<String, String> eliminarSerial(
+            @RequestParam String serial,
+            HttpSession session
+    ) {
+        Map<String, String> response = new HashMap<>();
+
+        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+
+        if (relevamiento == null) {
+            response.put("error", "No hay relevamiento activo");
+            return response;
+        }
+
         relevamiento.eliminar(serial);
-        return "redirect:/relevamiento";
+        response.put("success", "true");
+        return response;
     }
 
     @PostMapping("/finalizar")
     public String finalizarRelevamiento(HttpSession session, Model model) {
         String nombre = (String) session.getAttribute("nombreRelevamiento");
+        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+
+        if (relevamiento == null) {
+            return "redirect:/";
+        }
 
         model.addAttribute("nombreRelevamiento", nombre);
         model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
         model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
 
-        session.invalidate();
+        // ⭐ Mantener el relevamiento en sesión para que persista al volver con flecha
         return "finalizado";
     }
 
@@ -147,11 +203,15 @@ public class HomeController {
     // ========================================================================
 
     @GetMapping("/exportar-excel")
-    public ResponseEntity<byte[]> exportarExcelBienes(
-            @RequestParam String nombre,
-            HttpSession session
-    ) {
+    public ResponseEntity<byte[]> exportarExcelBienes(HttpSession session) {
         try {
+            String nombre = (String) session.getAttribute("nombreRelevamiento");
+            Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+
+            if (relevamiento == null || nombre == null) {
+                return ResponseEntity.status(404).build();
+            }
+
             byte[] excel = ExportService.generarExcel(
                     nombre,
                     relevamiento.getNumeroSerialEsperado(),
@@ -217,8 +277,21 @@ public class HomeController {
 
     @GetMapping("/api/bienes/data")
     @ResponseBody
-    public Relevamiento obtenerDatosBienes() {
-        return relevamiento;
+    public Map<String, Object> obtenerDatosBienes(HttpSession session) {
+        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+        String nombre = (String) session.getAttribute("nombreRelevamiento");
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (relevamiento != null) {
+            response.put("esperados", relevamiento.getNumeroSerialEsperado());
+            response.put("encontrados", relevamiento.getNumeroSerialEncontrado());
+            response.put("sobrantes", relevamiento.getNumeroSerialSobrante());
+            response.put("conteos", relevamiento.contarNumerosSeriales());
+            response.put("nombreRelevamiento", nombre);
+        }
+
+        return response;
     }
 
     @GetMapping("/api/oficinas/data")

@@ -1,12 +1,10 @@
 package org.example;
 
-
-
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import jakarta.servlet.http.HttpSession;
+        import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +58,8 @@ public class OficinaController {
         model.addAttribute("empleados", rel.getEmpleados());
         model.addAttribute("equiposOficina", rel.getEquiposOficina());
 
+        // ⭐ Agregar headers para prevenir cache
+        // Esto asegura que siempre se carguen los datos más recientes
         return "relevamiento-oficinas";
     }
 
@@ -95,6 +95,28 @@ public class OficinaController {
         rel.getEmpleados().add(new Empleado(nombre.trim()));
 
         return "redirect:/oficinas/relevamiento";
+    }
+
+    // ================= ELIMINAR EMPLEADO =================
+    @PostMapping("/eliminar-empleado")
+    @ResponseBody
+    public Map<String, String> eliminarEmpleado(
+            @RequestParam int indexEmpleado,
+            HttpSession session
+    ) {
+        Map<String, String> response = new HashMap<>();
+
+        RelevamientoOficina rel = obtenerRelevamiento(session);
+
+        if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            response.put("error", "Índice inválido");
+            return response;
+        }
+
+        rel.getEmpleados().remove(indexEmpleado);
+        response.put("success", "true");
+
+        return response;
     }
 
     // ================= EQUIPO USUARIO =================
@@ -210,6 +232,7 @@ public class OficinaController {
         model.addAttribute("totalImpresoras", rel.getTotalImpresoras());
         model.addAttribute("totalEscaneres", rel.getTotalEscaneres());
 
+        // La sesión se limpiará solo cuando se vuelva a inicio
         return "finalizado-oficinas";
     }
 }

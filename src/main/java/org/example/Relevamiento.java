@@ -4,170 +4,178 @@ import java.util.*;
 
 public class Relevamiento {
 
-    private final List<String> numeroSerialEsperado = new ArrayList<>();
-    private final List<String> numeroSerialEncontrado = new ArrayList<>();
-    private final List<String> numeroSerialSobrante = new ArrayList<>();
+    private List<String> numeroSerialEsperado = new ArrayList<>();
+    private List<String> numeroSerialEncontrado = new ArrayList<>();
+    private List<String> numeroSerialSobrante = new ArrayList<>();
 
-    private String normalize(String s) {
-        if (s == null) return null;
-        return s.trim().toUpperCase();
-    }
-
-    private String normalizeStrong(String s) {
-        if (s == null) return "";
-        return s.toUpperCase().replaceAll("[^A-Z0-9]", "");
-    }
-
-    // ===================== MÉTODOS NUEVOS CLAVE =====================
-
-    public void marcarComoEncontrado(String serial) {
-        String n = normalize(serial);
-        if (n == null || n.isEmpty()) return;
-
-        numeroSerialEsperado.removeIf(s -> s.equals(n));
-
-        if (!numeroSerialEncontrado.contains(n)) {
-            numeroSerialEncontrado.add(0, n);
-        }
-
-        numeroSerialSobrante.remove(n);
-    }
-
-    public void agregarSobrante(String serial) {
-        String n = normalize(serial);
-        if (n == null || n.isEmpty()) return;
-
-        if (!numeroSerialSobrante.contains(n) && !numeroSerialEncontrado.contains(n)) {
-            numeroSerialSobrante.add(0, n);
-        }
-    }
-
-    // ===================== CARGA =====================
-
+    // =====================================================================
+    // CARGAR SERIALES DESDE EXCEL
+    // =====================================================================
     public void cargarSeriales(List<String> seriales) {
-        numeroSerialEsperado.clear();
-        numeroSerialEncontrado.clear();
-        numeroSerialSobrante.clear();
-
-        if (seriales == null) return;
-
-        for (String s : seriales) {
-            String n = normalize(s);
-            if (n != null && !n.isEmpty()) {
-                numeroSerialEsperado.add(n);
-            }
-        }
+        this.numeroSerialEsperado.clear();
+        this.numeroSerialEsperado.addAll(seriales);
     }
 
-    // ===================== LÓGICA PRINCIPAL =====================
+    // =====================================================================
+    // PROCESAR INPUT CON SUGERENCIA (LEVENSHTEIN)
+    // =====================================================================
+    public String procesarInputConSugerencia(String serialIngresado) {
+        String serialNormalizado = serialIngresado.trim().toUpperCase();
 
-    public String procesarInputConSugerencia(String rawSerial) {
-        if (rawSerial == null) return null;
-
-        String serialNormal = normalize(rawSerial);
-        if (serialNormal == null || serialNormal.isEmpty()) return null;
-
-        // 1️⃣ Ya encontrado
-        if (numeroSerialEncontrado.contains(serialNormal)) return null;
-
-        // 2️⃣ Coincidencia exacta
-        for (int i = 0; i < numeroSerialEsperado.size(); i++) {
-            if (numeroSerialEsperado.get(i).equals(serialNormal)) {
-                marcarComoEncontrado(serialNormal);
-                return null;
+        // 1. Verificar si está en esperados (match exacto)
+        for (String esperado : numeroSerialEsperado) {
+            if (esperado.trim().equalsIgnoreCase(serialNormalizado)) {
+                marcarComoEncontrado(esperado);
+                return null; // No hay sugerencia, ya se procesó
             }
         }
 
-        // 3️⃣ Normalización fuerte
-        String serialFuerte = normalizeStrong(rawSerial);
-        if (serialFuerte.isEmpty()) {
-            agregarSobrante(serialNormal);
+        // 2. Buscar similitud con Levenshtein
+        String sugerencia = buscarSugerencia(serialNormalizado);
+
+        if (sugerencia != null) {
+            // Hay una sugerencia, retornarla para que el frontend la muestre
+            return sugerencia;
+        } else {
+            // No hay sugerencia, agregar como sobrante
+            agregarSobrante(serialNormalizado);
             return null;
         }
-
-        // 4️⃣ Contención
-        for (String esperado : numeroSerialEsperado) {
-            String esperadoLimpio = normalizeStrong(esperado);
-            if (serialFuerte.contains(esperadoLimpio) && !serialFuerte.equals(esperadoLimpio)) {
-                return esperado;
-            }
-        }
-
-        // 5️⃣ Levenshtein
-        String sugerencia = buscarSerialParecido(serialFuerte);
-        if (sugerencia != null) {
-            return sugerencia;
-        }
-
-        // 6️⃣ Sobrante
-        agregarSobrante(serialNormal);
-        return null;
     }
 
-    private String buscarSerialParecido(String serialIngresado) {
-        String mejor = null;
-        int menor = Integer.MAX_VALUE;
+    // =====================================================================
+    // BUSCAR SUGERENCIA CON LEVENSHTEIN
+    // =====================================================================
+    private String buscarSugerencia(String serialIngresado) {
+        int umbral = 3; // Máxima distancia permitida para sugerir
+        String mejorMatch = null;
+        int menorDistancia = Integer.MAX_VALUE;
 
         for (String esperado : numeroSerialEsperado) {
-            String e = normalizeStrong(esperado);
+            int distancia = calcularLevenshtein(
+                    serialIngresado.toUpperCase(),
+                    esperado.trim().toUpperCase()
+            );
 
-            if (serialIngresado.contains(e) || e.contains(serialIngresado)) continue;
-
-            int d = distancia(serialIngresado, e);
-            int len = Math.max(serialIngresado.length(), e.length());
-
-            double umbral = len <= 6 ? 1 : len <= 12 ? Math.ceil(len * 0.10) : Math.ceil(len * 0.15);
-
-            if (d <= umbral && d < menor) {
-                menor = d;
-                mejor = esperado;
+            if (distancia <= umbral && distancia < menorDistancia) {
+                menorDistancia = distancia;
+                mejorMatch = esperado;
             }
         }
-        return mejor;
+
+        return mejorMatch;
     }
 
-    private int distancia(String a, String b) {
-        int[][] dp = new int[a.length() + 1][b.length() + 1];
+    // =====================================================================
+    // ALGORITMO DE LEVENSHTEIN
+    // =====================================================================
+    private int calcularLevenshtein(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
 
-        for (int i = 0; i <= a.length(); i++) dp[i][0] = i;
-        for (int j = 0; j <= b.length(); j++) dp[0][j] = j;
+        for (int i = 0; i <= s1.length(); i++) {
+            dp[i][0] = i;
+        }
+        for (int j = 0; j <= s2.length(); j++) {
+            dp[0][j] = j;
+        }
 
-        for (int i = 1; i <= a.length(); i++) {
-            for (int j = 1; j <= b.length(); j++) {
-                dp[i][j] = a.charAt(i - 1) == b.charAt(j - 1)
-                        ? dp[i - 1][j - 1]
-                        : 1 + Math.min(dp[i - 1][j - 1],
-                        Math.min(dp[i - 1][j], dp[i][j - 1]));
+        for (int i = 1; i <= s1.length(); i++) {
+            for (int j = 1; j <= s2.length(); j++) {
+                int costo = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
+                dp[i][j] = Math.min(
+                        Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
+                        dp[i - 1][j - 1] + costo
+                );
             }
         }
-        return dp[a.length()][b.length()];
+
+        return dp[s1.length()][s2.length()];
     }
 
-    // ===================== GETTERS (solo lectura) =====================
+    // =====================================================================
+    // MARCAR COMO ENCONTRADO
+    // =====================================================================
+    public void marcarComoEncontrado(String serial) {
+        String serialNormalizado = serial.trim();
 
+        // Remover de esperados
+        numeroSerialEsperado.removeIf(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+        // Agregar a encontrados si no está ya
+        boolean yaExiste = numeroSerialEncontrado.stream()
+                .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+        if (!yaExiste) {
+            numeroSerialEncontrado.add(serialNormalizado);
+        }
+    }
+
+    // =====================================================================
+    // AGREGAR SOBRANTE
+    // =====================================================================
+    public void agregarSobrante(String serial) {
+        String serialNormalizado = serial.trim();
+
+        boolean yaExiste = numeroSerialSobrante.stream()
+                .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+        if (!yaExiste) {
+            numeroSerialSobrante.add(serialNormalizado);
+        }
+    }
+
+    // =====================================================================
+    // ELIMINAR (CON LÓGICA MEJORADA - AGREGAR AL PRINCIPIO)
+    // =====================================================================
+    public void eliminar(String serial) {
+        String serialNormalizado = serial.trim();
+
+        // Verificar si está en ENCONTRADOS
+        boolean estabEnEncontrados = numeroSerialEncontrado.removeIf(
+                s -> s.trim().equalsIgnoreCase(serialNormalizado)
+        );
+
+        // Si estaba en encontrados, devolverlo al PRINCIPIO de esperados
+        if (estabEnEncontrados) {
+            boolean yaEstaEnEsperados = numeroSerialEsperado.stream()
+                    .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
+
+            if (!yaEstaEnEsperados) {
+                // ⭐ AGREGAR AL PRINCIPIO en lugar de al final
+                numeroSerialEsperado.add(0, serialNormalizado);
+            }
+            return; // Ya terminamos
+        }
+
+        // Si no estaba en encontrados, eliminar de sobrantes
+        numeroSerialSobrante.removeIf(
+                s -> s.trim().equalsIgnoreCase(serialNormalizado)
+        );
+    }
+
+    // =====================================================================
+    // CONTAR NÚMEROS DE SERIE
+    // =====================================================================
+    public Map<String, Integer> contarNumerosSeriales() {
+        Map<String, Integer> conteos = new HashMap<>();
+        conteos.put("esperados", numeroSerialEsperado.size());
+        conteos.put("encontrados", numeroSerialEncontrado.size());
+        conteos.put("sobrantes", numeroSerialSobrante.size());
+        return conteos;
+    }
+
+    // =====================================================================
+    // GETTERS
+    // =====================================================================
     public List<String> getNumeroSerialEsperado() {
         return numeroSerialEsperado;
     }
 
     public List<String> getNumeroSerialEncontrado() {
-        return new ArrayList<>(numeroSerialEncontrado);
+        return numeroSerialEncontrado;
     }
 
     public List<String> getNumeroSerialSobrante() {
-        return new ArrayList<>(numeroSerialSobrante);
-    }
-
-    public Map<String, Long> contarNumerosSeriales() {
-        Map<String, Long> m = new HashMap<>();
-        m.put("esperados", (long) numeroSerialEsperado.size());
-        m.put("encontrados", (long) numeroSerialEncontrado.size());
-        m.put("sobrantes", (long) numeroSerialSobrante.size());
-        return m;
-    }
-
-    public void eliminar(String serial) {
-        String n = normalize(serial);
-        numeroSerialEncontrado.remove(n);
-        numeroSerialSobrante.remove(n);
+        return numeroSerialSobrante;
     }
 }

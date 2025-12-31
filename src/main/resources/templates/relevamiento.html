@@ -331,7 +331,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="mb-0">
                 <i class="bi bi-clipboard-check"></i>
-                <span th:text="${nombreRelevamiento}">Relevamiento</span>
+                <span id="nombreRelevamiento" th:text="${nombreRelevamiento}">Relevamiento</span>
             </h1>
             <form method="post" action="/finalizar">
                 <button type="submit" class="btn btn-danger">
@@ -363,14 +363,12 @@
                     <i class="bi bi-list-ul"></i> TODOS LOS SERIALES
                 </div>
                 <div class="lista-body">
-                    <ul class="list-group list-group-flush" id="listaTodos">
-                        <li class="list-group-item" th:each="s : ${todosLosSeriales}" th:text="${s}"></li>
-                    </ul>
+                    <ul class="list-group list-group-flush" id="listaTodos"></ul>
                 </div>
                 <div class="lista-footer">
                     <strong>Total esperados:</strong>
                     <span class="contador-badge">
-                        <i class="bi bi-hash"></i> <span th:text="${conteos.esperados}">0</span>
+                        <i class="bi bi-hash"></i> <span id="contadorEsperados">0</span>
                     </span>
                 </div>
             </div>
@@ -383,24 +381,12 @@
                     <i class="bi bi-check-circle"></i> ENCONTRADOS
                 </div>
                 <div class="lista-body">
-                    <ul class="list-group list-group-flush" id="listaEncontrados">
-                        <li th:each="s : ${encontrados}"
-                            th:classappend="${#strings.toUpperCase(#strings.trim(s)) ==
-                                            #strings.toUpperCase(#strings.trim(ultimoSerial))} ?
-                                            ' recien-agregado'"
-                            class="list-group-item d-flex justify-content-between align-items-center">
-                            <span th:text="${s}"></span>
-                            <button class="btn-trash" data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminar" th:attr="data-serial=${s}">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                        </li>
-                    </ul>
+                    <ul class="list-group list-group-flush" id="listaEncontrados"></ul>
                 </div>
                 <div class="lista-footer">
                     <strong>Total encontrados:</strong>
                     <span class="contador-badge">
-                        <i class="bi bi-hash"></i> <span id="contadorEncontrados" th:text="${conteos.encontrados}">0</span>
+                        <i class="bi bi-hash"></i> <span id="contadorEncontrados">0</span>
                     </span>
                 </div>
             </div>
@@ -413,24 +399,12 @@
                     <i class="bi bi-exclamation-triangle"></i> NO INVENTARIADOS
                 </div>
                 <div class="lista-body">
-                    <ul class="list-group list-group-flush" id="listaSobrantes">
-                        <li th:each="s : ${sobrantes}"
-                            th:classappend="${#strings.toUpperCase(#strings.trim(s)) ==
-                                            #strings.toUpperCase(#strings.trim(ultimoSerial))} ?
-                                            ' recien-agregado-sobrante'"
-                            class="list-group-item d-flex justify-content-between align-items-center">
-                            <span th:text="${s}"></span>
-                            <button class="btn-trash" data-bs-toggle="modal"
-                                    data-bs-target="#modalEliminar" th:attr="data-serial=${s}">
-                                <i class="bi bi-trash3-fill"></i>
-                            </button>
-                        </li>
-                    </ul>
+                    <ul class="list-group list-group-flush" id="listaSobrantes"></ul>
                 </div>
                 <div class="lista-footer">
                     <strong>Total no inventariados:</strong>
                     <span class="contador-badge">
-                        <i class="bi bi-hash"></i> <span id="contadorSobrantes" th:text="${conteos.sobrantes}">0</span>
+                        <i class="bi bi-hash"></i> <span id="contadorSobrantes">0</span>
                     </span>
                 </div>
             </div>
@@ -459,12 +433,9 @@
                     <button class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </button>
-                    <form method="get" action="/eliminar">
-                        <input type="hidden" name="serial" id="SerialEliminar">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-trash3-fill"></i> Eliminar
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">
+                        <i class="bi bi-trash3-fill"></i> Eliminar
+                    </button>
                 </div>
             </div>
         </div>
@@ -520,6 +491,79 @@
     let serialSugerido = null;
     let ultimoSerialAgregado = null;
 
+    // ========== CARGAR DATOS DESDE API ==========
+    async function cargarDatos() {
+        try {
+            const res = await fetch('/api/bienes/data');
+            if (!res.ok) throw new Error('Error al cargar datos');
+
+            const data = await res.json();
+
+            // Actualizar nombre
+            if (data.nombreRelevamiento) {
+                document.getElementById('nombreRelevamiento').textContent = data.nombreRelevamiento;
+            }
+
+            // Actualizar listas
+            renderLista('listaTodos', data.esperados || []);
+            renderLista('listaEncontrados', data.encontrados || [], true);
+            renderLista('listaSobrantes', data.sobrantes || [], true);
+
+            // Actualizar contadores
+            const conteos = data.conteos || {};
+            document.getElementById('contadorEsperados').textContent = conteos.esperados || 0;
+            document.getElementById('contadorEncontrados').textContent = conteos.encontrados || 0;
+            document.getElementById('contadorSobrantes').textContent = conteos.sobrantes || 0;
+
+        } catch(e) {
+            console.error('Error cargando datos:', e);
+        }
+    }
+
+    // ========== RENDERIZAR LISTA ==========
+    function renderLista(idLista, items, conBotonEliminar = false) {
+        const lista = document.getElementById(idLista);
+        lista.innerHTML = '';
+
+        if (items.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-center text-muted">Sin elementos</li>';
+            return;
+        }
+
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+
+            // Resaltar último agregado
+            if (ultimoSerialAgregado && item.toUpperCase().trim() === ultimoSerialAgregado.toUpperCase().trim()) {
+                li.classList.add(idLista === 'listaSobrantes' ? 'recien-agregado-sobrante' : 'recien-agregado');
+            }
+
+            const span = document.createElement('span');
+            span.textContent = item;
+            li.appendChild(span);
+
+            if (conBotonEliminar) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-trash';
+                btn.innerHTML = '<i class="bi bi-trash3-fill"></i>';
+                btn.onclick = () => mostrarModalEliminar(item);
+                li.appendChild(btn);
+            }
+
+            lista.appendChild(li);
+        });
+
+        // Auto-scroll al último agregado
+        setTimeout(() => {
+            const recienAgregado = lista.querySelector('.recien-agregado, .recien-agregado-sobrante');
+            if (recienAgregado) {
+                recienAgregado.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
+    }
+
+    // ========== AGREGAR SERIAL ==========
     document.getElementById('formAgregarSerial').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -542,18 +586,85 @@
                 document.getElementById('textoSugerencia').innerText = serialSugerido;
                 document.getElementById('textoOriginal').innerText = serialOriginal;
                 new bootstrap.Modal(document.getElementById('modalSugerencia')).show();
-                input.value = '';
+            } else if (data.yaExiste === 'true') {
+                // Serial ya existe, solo resaltarlo
+                ultimoSerialAgregado = serial;
+                await cargarDatos();
+
+                // Mostrar mensaje temporal
+                mostrarMensajeTemporal('Este serial ya fue registrado anteriormente');
             } else {
-                input.value = '';
-                location.reload();
+                ultimoSerialAgregado = serial;
+                await cargarDatos();
             }
+
+            input.value = '';
+            input.focus();
+
         } catch(e) {
             console.error(e);
             alert('Error al agregar serial');
-            input.value = '';
         }
     });
 
+    // ========== MENSAJE TEMPORAL ==========
+    function mostrarMensajeTemporal(texto) {
+        // Crear elemento de mensaje
+        const mensaje = document.createElement('div');
+        mensaje.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #eab308 0%, #f59e0b 100%);
+            color: #000;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(234, 179, 8, 0.4);
+            z-index: 9999;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease-out;
+        `;
+        mensaje.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${texto}`;
+
+        document.body.appendChild(mensaje);
+
+        // Eliminar después de 3 segundos
+        setTimeout(() => {
+            mensaje.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => mensaje.remove(), 300);
+        }, 3000);
+    }
+
+    // Agregar estilos de animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // ========== SUGERENCIA ENCONTRADO ==========
     document.getElementById('btnSugerenciaEncontrado').addEventListener('click', async () => {
         try {
             await fetch('/agregar-serial', {
@@ -561,13 +672,20 @@
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'serial=' + encodeURIComponent(serialSugerido) + '&accion=encontrado'
             });
-            location.reload();
+
+            ultimoSerialAgregado = serialSugerido;
+            await cargarDatos();
+
+            bootstrap.Modal.getInstance(document.getElementById('modalSugerencia')).hide();
+            document.getElementById('serialInput').focus();
+
         } catch(e) {
             console.error(e);
             alert('Error al procesar');
         }
     });
 
+    // ========== SUGERENCIA NO INVENTARIADO ==========
     document.getElementById('btnSugerenciaNoInventariado').addEventListener('click', async () => {
         try {
             await fetch('/agregar-serial', {
@@ -575,28 +693,58 @@
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'serial=' + encodeURIComponent(serialOriginal) + '&accion=noInventariado'
             });
-            location.reload();
+
+            ultimoSerialAgregado = serialOriginal;
+            await cargarDatos();
+
+            bootstrap.Modal.getInstance(document.getElementById('modalSugerencia')).hide();
+            document.getElementById('serialInput').focus();
+
         } catch(e) {
             console.error(e);
             alert('Error al procesar');
         }
     });
 
-    document.getElementById('modalEliminar').addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const serial = button.getAttribute('data-serial');
-        document.getElementById('serialAEliminar').innerText = serial;
-        document.getElementById('SerialEliminar').value = serial;
+    // ========== MODAL ELIMINAR ==========
+    let serialAEliminarActual = null;
+
+    function mostrarModalEliminar(serial) {
+        serialAEliminarActual = serial;
+        document.getElementById('serialAEliminar').textContent = serial;
+        new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+    }
+
+    document.getElementById('btnConfirmarEliminar').addEventListener('click', async () => {
+        if (!serialAEliminarActual) return;
+
+        try {
+            const res = await fetch('/eliminar-serial', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'serial=' + encodeURIComponent(serialAEliminarActual)
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                await cargarDatos();
+                bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
+            } else {
+                alert('Error al eliminar');
+            }
+
+        } catch(e) {
+            console.error(e);
+            alert('Error al eliminar serial');
+        }
     });
 
-    // Auto-scroll al último elemento agregado
+    // ========== CARGAR AL INICIAR ==========
     document.addEventListener('DOMContentLoaded', () => {
-        const recienAgregado = document.querySelector('.recien-agregado, .recien-agregado-sobrante');
-        if(recienAgregado) {
-            setTimeout(() => {
-                recienAgregado.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-        }
+        cargarDatos();
+        // Recargar datos cada 5 segundos para mantener sincronizado
+        setInterval(cargarDatos, 5000);
     });
 </script>
 
