@@ -320,6 +320,27 @@
         .serial-box-ingresado .serial-value {
             color: #ef4444;
         }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 
@@ -331,7 +352,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="mb-0">
                 <i class="bi bi-clipboard-check"></i>
-                <span id="nombreRelevamiento" th:text="${nombreRelevamiento}">Relevamiento</span>
+                <span id="nombreRelevamiento">Relevamiento</span>
             </h1>
             <form method="post" action="/finalizar">
                 <button type="submit" class="btn btn-danger">
@@ -491,8 +512,16 @@
     let serialSugerido = null;
     let ultimoSerialAgregado = null;
 
-    // ========== CARGAR DATOS DESDE API ==========
-    async function cargarDatos() {
+    // ⭐ CACHE DE DATOS PARA EVITAR PARPADEOS
+    let datosCache = {
+        esperados: [],
+        encontrados: [],
+        sobrantes: [],
+        conteos: {}
+    };
+
+    // ========== CARGAR DATOS DESDE API (OPTIMIZADO) ==========
+    async function cargarDatos(forzarActualizacion = false) {
         try {
             const res = await fetch('/api/bienes/data');
             if (!res.ok) throw new Error('Error al cargar datos');
@@ -504,10 +533,21 @@
                 document.getElementById('nombreRelevamiento').textContent = data.nombreRelevamiento;
             }
 
-            // Actualizar listas
-            renderLista('listaTodos', data.esperados || []);
-            renderLista('listaEncontrados', data.encontrados || [], true);
-            renderLista('listaSobrantes', data.sobrantes || [], true);
+            // ⭐ SOLO ACTUALIZAR SI HAY CAMBIOS
+            if (forzarActualizacion || JSON.stringify(datosCache.esperados) !== JSON.stringify(data.esperados)) {
+                datosCache.esperados = data.esperados || [];
+                renderLista('listaTodos', datosCache.esperados);
+            }
+
+            if (forzarActualizacion || JSON.stringify(datosCache.encontrados) !== JSON.stringify(data.encontrados)) {
+                datosCache.encontrados = data.encontrados || [];
+                renderLista('listaEncontrados', datosCache.encontrados, true);
+            }
+
+            if (forzarActualizacion || JSON.stringify(datosCache.sobrantes) !== JSON.stringify(data.sobrantes)) {
+                datosCache.sobrantes = data.sobrantes || [];
+                renderLista('listaSobrantes', datosCache.sobrantes, true);
+            }
 
             // Actualizar contadores
             const conteos = data.conteos || {};
@@ -515,12 +555,14 @@
             document.getElementById('contadorEncontrados').textContent = conteos.encontrados || 0;
             document.getElementById('contadorSobrantes').textContent = conteos.sobrantes || 0;
 
+            datosCache.conteos = conteos;
+
         } catch(e) {
             console.error('Error cargando datos:', e);
         }
     }
 
-    // ========== RENDERIZAR LISTA ==========
+    // ========== RENDERIZAR LISTA (SIN PARPADEOS) ==========
     function renderLista(idLista, items, conBotonEliminar = false) {
         const lista = document.getElementById(idLista);
         lista.innerHTML = '';
@@ -554,13 +596,15 @@
             lista.appendChild(li);
         });
 
-        // Auto-scroll al último agregado
-        setTimeout(() => {
-            const recienAgregado = lista.querySelector('.recien-agregado, .recien-agregado-sobrante');
-            if (recienAgregado) {
-                recienAgregado.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }, 100);
+        // ⭐ SCROLL SUAVE AL NUEVO ELEMENTO (arriba)
+        if (ultimoSerialAgregado) {
+            setTimeout(() => {
+                const recienAgregado = lista.querySelector('.recien-agregado, .recien-agregado-sobrante');
+                if (recienAgregado) {
+                    recienAgregado.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        }
     }
 
     // ========== AGREGAR SERIAL ==========
@@ -587,15 +631,12 @@
                 document.getElementById('textoOriginal').innerText = serialOriginal;
                 new bootstrap.Modal(document.getElementById('modalSugerencia')).show();
             } else if (data.yaExiste === 'true') {
-                // Serial ya existe, solo resaltarlo
                 ultimoSerialAgregado = serial;
-                await cargarDatos();
-
-                // Mostrar mensaje temporal
+                await cargarDatos(true);
                 mostrarMensajeTemporal('Este serial ya fue registrado anteriormente');
             } else {
                 ultimoSerialAgregado = serial;
-                await cargarDatos();
+                await cargarDatos(true);
             }
 
             input.value = '';
@@ -609,7 +650,6 @@
 
     // ========== MENSAJE TEMPORAL ==========
     function mostrarMensajeTemporal(texto) {
-        // Crear elemento de mensaje
         const mensaje = document.createElement('div');
         mensaje.style.cssText = `
             position: fixed;
@@ -631,38 +671,11 @@
 
         document.body.appendChild(mensaje);
 
-        // Eliminar después de 3 segundos
         setTimeout(() => {
             mensaje.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => mensaje.remove(), 300);
         }, 3000);
     }
-
-    // Agregar estilos de animación
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
 
     // ========== SUGERENCIA ENCONTRADO ==========
     document.getElementById('btnSugerenciaEncontrado').addEventListener('click', async () => {
@@ -674,7 +687,7 @@
             });
 
             ultimoSerialAgregado = serialSugerido;
-            await cargarDatos();
+            await cargarDatos(true);
 
             bootstrap.Modal.getInstance(document.getElementById('modalSugerencia')).hide();
             document.getElementById('serialInput').focus();
@@ -695,7 +708,7 @@
             });
 
             ultimoSerialAgregado = serialOriginal;
-            await cargarDatos();
+            await cargarDatos(true);
 
             bootstrap.Modal.getInstance(document.getElementById('modalSugerencia')).hide();
             document.getElementById('serialInput').focus();
@@ -728,7 +741,7 @@
             const data = await res.json();
 
             if (data.success) {
-                await cargarDatos();
+                await cargarDatos(true);
                 bootstrap.Modal.getInstance(document.getElementById('modalEliminar')).hide();
             } else {
                 alert('Error al eliminar');
@@ -742,9 +755,9 @@
 
     // ========== CARGAR AL INICIAR ==========
     document.addEventListener('DOMContentLoaded', () => {
-        cargarDatos();
-        // Recargar datos cada 5 segundos para mantener sincronizado
-        setInterval(cargarDatos, 5000);
+        cargarDatos(true);
+        // ⭐ POLLING MÁS INTELIGENTE (cada 3 segundos sin forzar)
+        setInterval(() => cargarDatos(false), 3000);
     });
 </script>
 

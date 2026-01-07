@@ -17,24 +17,32 @@ public class Relevamiento {
     }
 
     // =====================================================================
-    // PROCESAR INPUT CON SUGERENCIA (LEVENSHTEIN)
+    // PROCESAR INPUT CON SUGERENCIA (MEJORADO CON MODAL)
     // =====================================================================
     public String procesarInputConSugerencia(String serialIngresado) {
         String serialNormalizado = serialIngresado.trim().toUpperCase();
 
-        // 1. Verificar si está en esperados (match exacto)
+        // 1. Verificar coincidencia exacta (sin basura)
         for (String esperado : numeroSerialEsperado) {
             if (esperado.trim().equalsIgnoreCase(serialNormalizado)) {
                 marcarComoEncontrado(esperado);
-                return null; // No hay sugerencia, ya se procesó
+                return null; // Match exacto, sin modal
             }
         }
 
-        // 2. Buscar similitud con Levenshtein
+        // 2. ⭐ Buscar si algún serial esperado está CONTENIDO en el texto ingresado
+        for (String esperado : numeroSerialEsperado) {
+            String esperadoNormalizado = esperado.trim().toUpperCase();
+            if (serialNormalizado.contains(esperadoNormalizado)) {
+                // ✅ ENCONTRADO DENTRO DEL TEXTO → DEVOLVER SUGERENCIA PARA MOSTRAR MODAL
+                return esperado;
+            }
+        }
+
+        // 3. Buscar similitud con Levenshtein
         String sugerencia = buscarSugerencia(serialNormalizado);
 
         if (sugerencia != null) {
-            // Hay una sugerencia, retornarla para que el frontend la muestre
             return sugerencia;
         } else {
             // No hay sugerencia, agregar como sobrante
@@ -47,15 +55,15 @@ public class Relevamiento {
     // BUSCAR SUGERENCIA CON LEVENSHTEIN
     // =====================================================================
     private String buscarSugerencia(String serialIngresado) {
-        int umbral = 3; // Máxima distancia permitida para sugerir
+        int umbral = 3;
         String mejorMatch = null;
         int menorDistancia = Integer.MAX_VALUE;
 
         for (String esperado : numeroSerialEsperado) {
-            int distancia = calcularLevenshtein(
-                    serialIngresado.toUpperCase(),
-                    esperado.trim().toUpperCase()
-            );
+            String esperadoNormalizado = esperado.trim().toUpperCase();
+
+            // Calcular distancia Levenshtein
+            int distancia = calcularLevenshtein(serialIngresado, esperadoNormalizado);
 
             if (distancia <= umbral && distancia < menorDistancia) {
                 menorDistancia = distancia;
@@ -93,25 +101,24 @@ public class Relevamiento {
     }
 
     // =====================================================================
-    // MARCAR COMO ENCONTRADO
+    // MARCAR COMO ENCONTRADO (⭐ AGREGAR AL PRINCIPIO)
     // =====================================================================
     public void marcarComoEncontrado(String serial) {
         String serialNormalizado = serial.trim();
 
-        // Remover de esperados
         numeroSerialEsperado.removeIf(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
-        // Agregar a encontrados si no está ya
         boolean yaExiste = numeroSerialEncontrado.stream()
                 .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
         if (!yaExiste) {
-            numeroSerialEncontrado.add(serialNormalizado);
+            // ⭐ AGREGAR AL PRINCIPIO EN LUGAR DE AL FINAL
+            numeroSerialEncontrado.add(0, serialNormalizado);
         }
     }
 
     // =====================================================================
-    // AGREGAR SOBRANTE
+    // AGREGAR SOBRANTE (⭐ AGREGAR AL PRINCIPIO)
     // =====================================================================
     public void agregarSobrante(String serial) {
         String serialNormalizado = serial.trim();
@@ -120,34 +127,31 @@ public class Relevamiento {
                 .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
         if (!yaExiste) {
-            numeroSerialSobrante.add(serialNormalizado);
+            // ⭐ AGREGAR AL PRINCIPIO EN LUGAR DE AL FINAL
+            numeroSerialSobrante.add(0, serialNormalizado);
         }
     }
 
     // =====================================================================
-    // ELIMINAR (CON LÓGICA MEJORADA - AGREGAR AL PRINCIPIO)
+    // ELIMINAR
     // =====================================================================
     public void eliminar(String serial) {
         String serialNormalizado = serial.trim();
 
-        // Verificar si está en ENCONTRADOS
         boolean estabEnEncontrados = numeroSerialEncontrado.removeIf(
                 s -> s.trim().equalsIgnoreCase(serialNormalizado)
         );
 
-        // Si estaba en encontrados, devolverlo al PRINCIPIO de esperados
         if (estabEnEncontrados) {
             boolean yaEstaEnEsperados = numeroSerialEsperado.stream()
                     .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
             if (!yaEstaEnEsperados) {
-                // ⭐ AGREGAR AL PRINCIPIO en lugar de al final
                 numeroSerialEsperado.add(0, serialNormalizado);
             }
-            return; // Ya terminamos
+            return;
         }
 
-        // Si no estaba en encontrados, eliminar de sobrantes
         numeroSerialSobrante.removeIf(
                 s -> s.trim().equalsIgnoreCase(serialNormalizado)
         );
