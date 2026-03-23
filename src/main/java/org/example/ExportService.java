@@ -1,13 +1,12 @@
 package org.example;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.web.multipart.MultipartFile;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.*;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ExportService {
@@ -17,390 +16,317 @@ public class ExportService {
         return nombre + " (" + fecha + ")." + extension;
     }
 
-    // =====================================================================
-    // EXPORTAR EXCEL - BIENES (Seriales)
-    // =====================================================================
+    private static final byte[] SLATE_800   = { (byte)0x1E, (byte)0x29, (byte)0x3B };
+    private static final byte[] SLATE_600   = { (byte)0x47, (byte)0x55, (byte)0x69 };
+    private static final byte[] SLATE_200   = { (byte)0xE2, (byte)0xE8, (byte)0xF0 };
+    private static final byte[] SLATE_50    = { (byte)0xF8, (byte)0xFA, (byte)0xFC };
+    private static final byte[] WHITE       = { (byte)0xFF, (byte)0xFF, (byte)0xFF };
+    private static final byte[] GREEN_700   = { (byte)0x15, (byte)0x80, (byte)0x3D };
+    private static final byte[] GREEN_50    = { (byte)0xF0, (byte)0xFD, (byte)0xF4 };
+    private static final byte[] GREEN_200   = { (byte)0xBB, (byte)0xF7, (byte)0xD0 };
+    private static final byte[] AMBER_900   = { (byte)0x78, (byte)0x35, (byte)0x00 };
+    private static final byte[] AMBER_100   = { (byte)0xFE, (byte)0xF3, (byte)0xC7 };
+    private static final byte[] AMBER_300   = { (byte)0xFC, (byte)0xD3, (byte)0x4D };
+
+    private static XSSFColor xc(byte[] rgb) {
+        return new XSSFColor(rgb, new DefaultIndexedColorMap());
+    }
+
+    private static void bordes(XSSFCellStyle s, byte[] color) {
+        XSSFColor c = xc(color);
+        s.setBorderTop(BorderStyle.THIN);    s.setTopBorderColor(c);
+        s.setBorderBottom(BorderStyle.THIN); s.setBottomBorderColor(c);
+        s.setBorderLeft(BorderStyle.THIN);   s.setLeftBorderColor(c);
+        s.setBorderRight(BorderStyle.THIN);  s.setRightBorderColor(c);
+    }
+
     public static byte[] generarExcel(
             String nombre,
             List<String> esperados,
             List<String> encontrados,
             List<String> sobrantes
     ) {
-        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            Sheet sheet = wb.createSheet("Relevamiento");
+            XSSFSheet sheet = wb.createSheet("Relevamiento");
+            sheet.setDefaultRowHeightInPoints(16f);
 
-            // ================= ESTILOS =================
-            Font tituloFont = wb.createFont();
-            tituloFont.setBold(true);
-            tituloFont.setFontHeightInPoints((short) 16);
+            XSSFFont fTitulo = wb.createFont();
+            fTitulo.setFontName("Calibri"); fTitulo.setBold(true);
+            fTitulo.setFontHeightInPoints((short) 16); fTitulo.setColor(xc(SLATE_800));
 
-            CellStyle tituloStyle = wb.createCellStyle();
-            tituloStyle.setFont(tituloFont);
+            XSSFFont fMeta = wb.createFont();
+            fMeta.setFontName("Calibri"); fMeta.setItalic(true);
+            fMeta.setFontHeightInPoints((short) 9); fMeta.setColor(xc(SLATE_600));
 
-            Font headerFont = wb.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            XSSFFont fHeader = wb.createFont();
+            fHeader.setFontName("Calibri"); fHeader.setBold(true);
+            fHeader.setFontHeightInPoints((short) 10); fHeader.setColor(xc(WHITE));
 
-            CellStyle headerStyle = wb.createCellStyle();
-            headerStyle.setFont(headerFont);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setBorderBottom(BorderStyle.THIN);
-            headerStyle.setBorderTop(BorderStyle.THIN);
-            headerStyle.setBorderLeft(BorderStyle.THIN);
-            headerStyle.setBorderRight(BorderStyle.THIN);
+            XSSFFont fCelda = wb.createFont();
+            fCelda.setFontName("Calibri"); fCelda.setFontHeightInPoints((short) 10);
+            fCelda.setColor(xc(SLATE_800));
 
-            CellStyle cellStyle = wb.createCellStyle();
-            cellStyle.setBorderBottom(BorderStyle.THIN);
-            cellStyle.setBorderTop(BorderStyle.THIN);
-            cellStyle.setBorderLeft(BorderStyle.THIN);
-            cellStyle.setBorderRight(BorderStyle.THIN);
-            cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            XSSFCellStyle sTitulo = wb.createCellStyle();
+            sTitulo.setFont(fTitulo); sTitulo.setVerticalAlignment(VerticalAlignment.CENTER);
+            sTitulo.setFillForegroundColor(xc(WHITE)); sTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ================= TITULO =================
-            Row tituloRow = sheet.createRow(0);
-            Cell tituloCell = tituloRow.createCell(0);
-            tituloCell.setCellValue(nombre);
-            tituloCell.setCellStyle(tituloStyle);
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 2));
+            XSSFCellStyle sMeta = wb.createCellStyle();
+            sMeta.setFont(fMeta);
+            sMeta.setFillForegroundColor(xc(WHITE)); sMeta.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ================= FECHA =================
-            Row fechaRow = sheet.createRow(1);
-            fechaRow.createCell(0).setCellValue(
-                    "Fecha fin relevamiento: " + LocalDateTime.now()
-                            .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-            );
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 2));
+            XSSFCellStyle sHeader = wb.createCellStyle();
+            sHeader.setFont(fHeader); sHeader.setAlignment(HorizontalAlignment.CENTER);
+            sHeader.setVerticalAlignment(VerticalAlignment.CENTER);
+            sHeader.setFillForegroundColor(xc(SLATE_800)); sHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sHeader, SLATE_600);
 
-            // ================= RESUMEN =================
-            Row resumenRow = sheet.createRow(2);
-            resumenRow.createCell(0).setCellValue(
-                    String.format("Esperados: %d  |  Encontrados: %d  |  No inventariados: %d",
-                            esperados.size(), encontrados.size(), sobrantes.size())
-            );
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 0, 2));
+            XSSFCellStyle sCelda = wb.createCellStyle();
+            sCelda.setFont(fCelda); sCelda.setVerticalAlignment(VerticalAlignment.CENTER);
+            sCelda.setFillForegroundColor(xc(WHITE)); sCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sCelda, SLATE_200);
 
-            // ================= HEADERS =================
-            Row header = sheet.createRow(4);
-            String[] columnas = {"ESPERADOS", "ENCONTRADOS", "NO INVENTARIADOS"};
+            XSSFCellStyle sCeldaZ = wb.createCellStyle();
+            sCeldaZ.setFont(fCelda); sCeldaZ.setVerticalAlignment(VerticalAlignment.CENTER);
+            sCeldaZ.setFillForegroundColor(xc(SLATE_50)); sCeldaZ.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sCeldaZ, SLATE_200);
 
-            for (int i = 0; i < columnas.length; i++) {
-                Cell cell = header.createCell(i);
-                cell.setCellValue(columnas[i]);
-                cell.setCellStyle(headerStyle);
+            Row rT = sheet.createRow(0); rT.setHeightInPoints(28);
+            Cell cT = rT.createCell(0); cT.setCellValue(nombre); cT.setCellStyle(sTitulo);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 2));
+
+            Row rF = sheet.createRow(1); rF.setHeightInPoints(15);
+            Cell cF = rF.createCell(0);
+            cF.setCellValue("Fecha fin: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            cF.setCellStyle(sMeta);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 2));
+
+            Row rR = sheet.createRow(2); rR.setHeightInPoints(15);
+            Cell cR = rR.createCell(0);
+            cR.setCellValue(String.format("Esperados: %d   ·   Encontrados: %d   ·   No inventariados: %d",
+                    esperados.size(), encontrados.size(), sobrantes.size()));
+            cR.setCellStyle(sMeta);
+            sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 2));
+
+            sheet.createRow(3);
+
+            Row rH = sheet.createRow(4); rH.setHeightInPoints(20);
+            String[] cols = {"ESPERADOS", "ENCONTRADOS", "NO INVENTARIADOS"};
+            for (int i = 0; i < cols.length; i++) {
+                Cell cell = rH.createCell(i); cell.setCellValue(cols[i]); cell.setCellStyle(sHeader);
             }
 
-            // ================= DATA =================
-            int maxRows = Math.max(esperados.size(),
-                    Math.max(encontrados.size(), sobrantes.size()));
-
-            for (int i = 0; i < maxRows; i++) {
-                Row row = sheet.createRow(i + 5);
-
-                if (i < esperados.size()) {
-                    Cell c = row.createCell(0);
-                    c.setCellValue(esperados.get(i));
-                    c.setCellStyle(cellStyle);
-                }
-                if (i < encontrados.size()) {
-                    Cell c = row.createCell(1);
-                    c.setCellValue(encontrados.get(i));
-                    c.setCellStyle(cellStyle);
-                }
-                if (i < sobrantes.size()) {
-                    Cell c = row.createCell(2);
-                    c.setCellValue(sobrantes.get(i));
-                    c.setCellStyle(cellStyle);
-                }
+            int max = Math.max(esperados.size(), Math.max(encontrados.size(), sobrantes.size()));
+            for (int i = 0; i < max; i++) {
+                Row row = sheet.createRow(i + 5); row.setHeight((short)-1);
+                XSSFCellStyle est = (i % 2 == 0) ? sCelda : sCeldaZ;
+                if (i < esperados.size())   { Cell c = row.createCell(0); c.setCellValue(esperados.get(i));   c.setCellStyle(est); }
+                if (i < encontrados.size()) { Cell c = row.createCell(1); c.setCellValue(encontrados.get(i)); c.setCellStyle(est); }
+                if (i < sobrantes.size())   { Cell c = row.createCell(2); c.setCellValue(sobrantes.get(i));   c.setCellStyle(est); }
             }
 
-            // Ajustar columnas
             for (int i = 0; i < 3; i++) {
                 sheet.autoSizeColumn(i);
-                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1000);
+                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1200);
             }
 
             wb.write(out);
             return out.toByteArray();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        } catch (Exception e) { e.printStackTrace(); return null; }
     }
 
-    // =====================================================================
-    // EXPORTAR EXCEL - OFICINAS (UNA SOLA HOJA)
-    // =====================================================================
     public static byte[] generarExcelOficinas(RelevamientoOficina rel) {
-        try (Workbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+        try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-            Sheet sheet = wb.createSheet("Relevamiento Completo");
+            XSSFSheet sheet = wb.createSheet("Relevamiento");
+            sheet.setDefaultRowHeightInPoints(16f);
 
-            // ================= ESTILOS =================
-            Font tituloFont = wb.createFont();
-            tituloFont.setBold(true);
-            tituloFont.setFontHeightInPoints((short) 16);
+            XSSFFont fTitulo = wb.createFont();
+            fTitulo.setFontName("Calibri"); fTitulo.setBold(true);
+            fTitulo.setFontHeightInPoints((short) 16); fTitulo.setColor(xc(SLATE_800));
 
-            CellStyle tituloStyle = wb.createCellStyle();
-            tituloStyle.setFont(tituloFont);
+            XSSFFont fMeta = wb.createFont();
+            fMeta.setFontName("Calibri"); fMeta.setItalic(true);
+            fMeta.setFontHeightInPoints((short) 9); fMeta.setColor(xc(SLATE_600));
 
-            Font headerFont = wb.createFont();
-            headerFont.setBold(true);
-            headerFont.setColor(IndexedColors.WHITE.getIndex());
+            XSSFFont fSeccion = wb.createFont();
+            fSeccion.setFontName("Calibri"); fSeccion.setBold(true);
+            fSeccion.setFontHeightInPoints((short) 10); fSeccion.setColor(xc(GREEN_700));
 
-            CellStyle headerStyle = wb.createCellStyle();
-            headerStyle.setFont(headerFont);
-            headerStyle.setAlignment(HorizontalAlignment.CENTER);
-            headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
-            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            headerStyle.setBorderBottom(BorderStyle.THIN);
-            headerStyle.setBorderTop(BorderStyle.THIN);
-            headerStyle.setBorderLeft(BorderStyle.THIN);
-            headerStyle.setBorderRight(BorderStyle.THIN);
+            XSSFFont fHeader = wb.createFont();
+            fHeader.setFontName("Calibri"); fHeader.setBold(true);
+            fHeader.setFontHeightInPoints((short) 10); fHeader.setColor(xc(WHITE));
 
-            CellStyle cellStyle = wb.createCellStyle();
-            cellStyle.setBorderBottom(BorderStyle.THIN);
-            cellStyle.setBorderTop(BorderStyle.THIN);
-            cellStyle.setBorderLeft(BorderStyle.THIN);
-            cellStyle.setBorderRight(BorderStyle.THIN);
-            cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-            cellStyle.setWrapText(true);
+            XSSFFont fEmpleado = wb.createFont();
+            fEmpleado.setFontName("Calibri"); fEmpleado.setBold(true);
+            fEmpleado.setFontHeightInPoints((short) 10); fEmpleado.setColor(xc(SLATE_800));
 
-            CellStyle empleadoStyle = wb.createCellStyle();
-            empleadoStyle.cloneStyleFrom(cellStyle);
-            Font empleadoFont = wb.createFont();
-            empleadoFont.setBold(true);
-            empleadoStyle.setFont(empleadoFont);
-            empleadoStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            empleadoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            XSSFFont fCelda = wb.createFont();
+            fCelda.setFontName("Calibri"); fCelda.setFontHeightInPoints((short) 10);
+            fCelda.setColor(xc(SLATE_800));
 
-            // ================= TÍTULO PRINCIPAL =================
-            Row titulo = sheet.createRow(0);
-            Cell tituloCell = titulo.createCell(0);
-            tituloCell.setCellValue(rel.getNombre() + " - Relevamiento Completo");
-            tituloCell.setCellStyle(tituloStyle);
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 6));
+            XSSFFont fComentario = wb.createFont();
+            fComentario.setFontName("Calibri"); fComentario.setItalic(true);
+            fComentario.setFontHeightInPoints((short) 10); fComentario.setColor(xc(AMBER_900));
 
-            // ================= FECHA =================
-            Row fecha = sheet.createRow(1);
-            fecha.createCell(0).setCellValue(
-                    "Fecha: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-            );
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 6));
+            XSSFCellStyle sTitulo = wb.createCellStyle();
+            sTitulo.setFont(fTitulo); sTitulo.setVerticalAlignment(VerticalAlignment.CENTER);
+            sTitulo.setFillForegroundColor(xc(WHITE)); sTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // ================= SECCIÓN 1: EMPLEADOS Y SUS EQUIPOS =================
+            XSSFCellStyle sMeta = wb.createCellStyle();
+            sMeta.setFont(fMeta);
+            sMeta.setFillForegroundColor(xc(WHITE)); sMeta.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            XSSFCellStyle sSeccion = wb.createCellStyle();
+            sSeccion.setFont(fSeccion); sSeccion.setVerticalAlignment(VerticalAlignment.CENTER);
+            sSeccion.setFillForegroundColor(xc(GREEN_50)); sSeccion.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            sSeccion.setBorderBottom(BorderStyle.THIN); sSeccion.setBottomBorderColor(xc(GREEN_200));
+
+            XSSFCellStyle sHeader = wb.createCellStyle();
+            sHeader.setFont(fHeader); sHeader.setAlignment(HorizontalAlignment.CENTER);
+            sHeader.setVerticalAlignment(VerticalAlignment.CENTER); sHeader.setWrapText(true);
+            sHeader.setFillForegroundColor(xc(SLATE_800)); sHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sHeader, SLATE_600);
+
+            XSSFCellStyle sEmpleado = wb.createCellStyle();
+            sEmpleado.setFont(fEmpleado); sEmpleado.setVerticalAlignment(VerticalAlignment.CENTER);
+            sEmpleado.setWrapText(true);
+            sEmpleado.setFillForegroundColor(xc(SLATE_50)); sEmpleado.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sEmpleado, SLATE_200);
+            sEmpleado.setBorderLeft(BorderStyle.MEDIUM); sEmpleado.setLeftBorderColor(xc(SLATE_800));
+
+            XSSFCellStyle sCelda = wb.createCellStyle();
+            sCelda.setFont(fCelda); sCelda.setVerticalAlignment(VerticalAlignment.CENTER); sCelda.setWrapText(true);
+            sCelda.setFillForegroundColor(xc(WHITE)); sCelda.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sCelda, SLATE_200);
+
+            XSSFCellStyle sCeldaZ = wb.createCellStyle();
+            sCeldaZ.setFont(fCelda); sCeldaZ.setVerticalAlignment(VerticalAlignment.CENTER); sCeldaZ.setWrapText(true);
+            sCeldaZ.setFillForegroundColor(xc(SLATE_50)); sCeldaZ.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sCeldaZ, SLATE_200);
+
+            XSSFCellStyle sComentario = wb.createCellStyle();
+            sComentario.setFont(fComentario); sComentario.setVerticalAlignment(VerticalAlignment.CENTER); sComentario.setWrapText(true);
+            sComentario.setFillForegroundColor(xc(AMBER_100)); sComentario.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sComentario, AMBER_300);
+
+            Row rT = sheet.createRow(0); rT.setHeightInPoints(30);
+            Cell cT = rT.createCell(0); cT.setCellValue(rel.getNombre()); cT.setCellStyle(sTitulo);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
+
+            Row rF = sheet.createRow(1); rF.setHeightInPoints(15);
+            Cell cF = rF.createCell(0);
+            cF.setCellValue("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            cF.setCellStyle(sMeta);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 7));
+
+            sheet.createRow(2).setHeightInPoints(8);
+
             int rowNum = 3;
 
-            // Header Empleados
-            Row headerEmpleados = sheet.createRow(rowNum++);
-            String[] columnasEmpleados = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO"};
-            for (int i = 0; i < columnasEmpleados.length; i++) {
-                Cell cell = headerEmpleados.createCell(i);
-                cell.setCellValue(columnasEmpleados[i]);
-                cell.setCellStyle(headerStyle);
+            Row rSecEmp = sheet.createRow(rowNum++); rSecEmp.setHeightInPoints(18);
+            Cell cSecEmp = rSecEmp.createCell(0);
+            cSecEmp.setCellValue("EMPLEADOS"); cSecEmp.setCellStyle(sSeccion);
+            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 7));
+
+            Row rHEmp = sheet.createRow(rowNum++); rHEmp.setHeightInPoints(22);
+            String[] colsEmp = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO", "COMENTARIO"};
+            for (int i = 0; i < colsEmp.length; i++) {
+                Cell cell = rHEmp.createCell(i); cell.setCellValue(colsEmp[i]); cell.setCellStyle(sHeader);
             }
 
-            // Data - Empleados
+            int z = 0;
             for (Empleado emp : rel.getEmpleados()) {
                 Row row = sheet.createRow(rowNum++);
+                row.setHeight((short)-1); // auto-altura
+                XSSFCellStyle est = (z % 2 == 0) ? sCelda : sCeldaZ;
 
-                // Nombre del empleado
-                Cell cellNombre = row.createCell(0);
-                cellNombre.setCellValue(emp.getNombre());
-                cellNombre.setCellStyle(empleadoStyle);
+                Cell cNombre = row.createCell(0);
+                cNombre.setCellValue(emp.getNombre()
+                        + (emp.getCargo() != null && !emp.getCargo().isBlank() ? "  ·  " + emp.getCargo() : ""));
+                cNombre.setCellStyle(sEmpleado);
 
-                // CPU
-                List<EquipoUsuario> cpus = emp.getEquipos().stream()
-                        .filter(e -> "CPU".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String cpu = "";
-                if (cpus.size() == 1) {
-                    EquipoUsuario c = cpus.get(0);
-                    cpu = c.getNumeroSerie();
-                    if (c.getNombre() != null && !c.getNombre().isEmpty()) {
-                        cpu += " (" + c.getNombre() + ")";
-                    }
-                } else if (cpus.size() > 1) {
-                    for (int i = 0; i < cpus.size(); i++) {
-                        EquipoUsuario c = cpus.get(i);
-                        cpu += "CPU" + (i + 1) + ": " + c.getNumeroSerie();
-                        if (c.getNombre() != null && !c.getNombre().isEmpty()) {
-                            cpu += " (" + c.getNombre() + ")";
-                        }
-                        if (i < cpus.size() - 1) cpu += "\n";
-                    }
+                String[] textos = {
+                        buildEquipoText(emp, "CPU", "CPU"),
+                        buildEquipoText(emp, "Monitor", "Monitor"),
+                        buildEquipoText(emp, "Teléfono IP", "Teléfono"),
+                        buildEquipoText(emp, "Cámara", "Cámara"),
+                        buildEquipoText(emp, "Firma digital", "Firma"),
+                        buildEquipoText(emp, "Lector Optico", "Lector")
+                };
+                for (int col = 0; col < textos.length; col++) {
+                    Cell c = row.createCell(col + 1); c.setCellValue(textos[col]); c.setCellStyle(est);
                 }
-                Cell cellCPU = row.createCell(1);
-                cellCPU.setCellValue(cpu);
-                cellCPU.setCellStyle(cellStyle);
 
-                // Monitor
-                List<EquipoUsuario> monitores = emp.getEquipos().stream()
-                        .filter(e -> "Monitor".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String monitor = "";
-                if (monitores.size() == 1) {
-                    monitor = monitores.get(0).getNumeroSerie();
-                } else if (monitores.size() > 1) {
-                    for (int i = 0; i < monitores.size(); i++) {
-                        monitor += "Monitor" + (i + 1) + ": " + monitores.get(i).getNumeroSerie();
-                        if (i < monitores.size() - 1) monitor += "\n";
-                    }
-                }
-                Cell cellMonitor = row.createCell(2);
-                cellMonitor.setCellValue(monitor);
-                cellMonitor.setCellStyle(cellStyle);
-
-                // Teléfono IP
-                List<EquipoUsuario> telefonos = emp.getEquipos().stream()
-                        .filter(e -> "Teléfono IP".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String telefono = "";
-                if (telefonos.size() == 1) {
-                    telefono = telefonos.get(0).getNumeroSerie();
-                } else if (telefonos.size() > 1) {
-                    for (int i = 0; i < telefonos.size(); i++) {
-                        telefono += "Teléfono" + (i + 1) + ": " + telefonos.get(i).getNumeroSerie();
-                        if (i < telefonos.size() - 1) telefono += "\n";
-                    }
-                }
-                Cell cellTelefono = row.createCell(3);
-                cellTelefono.setCellValue(telefono);
-                cellTelefono.setCellStyle(cellStyle);
-
-                // Cámara
-                List<EquipoUsuario> camaras = emp.getEquipos().stream()
-                        .filter(e -> "Cámara".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String camara = "";
-                if (camaras.size() == 1) {
-                    camara = camaras.get(0).getNumeroSerie();
-                } else if (camaras.size() > 1) {
-                    for (int i = 0; i < camaras.size(); i++) {
-                        camara += "Cámara" + (i + 1) + ": " + camaras.get(i).getNumeroSerie();
-                        if (i < camaras.size() - 1) camara += "\n";
-                    }
-                }
-                Cell cellCamara = row.createCell(4);
-                cellCamara.setCellValue(camara);
-                cellCamara.setCellStyle(cellStyle);
-
-                // Firma digital
-                List<EquipoUsuario> firmas = emp.getEquipos().stream()
-                        .filter(e -> "Firma digital".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String firma = "";
-                if (firmas.size() == 1) {
-                    firma = firmas.get(0).getNumeroSerie();
-                } else if (firmas.size() > 1) {
-                    for (int i = 0; i < firmas.size(); i++) {
-                        firma += "Firma" + (i + 1) + ": " + firmas.get(i).getNumeroSerie();
-                        if (i < firmas.size() - 1) firma += "\n";
-                    }
-                }
-                Cell cellFirma = row.createCell(5);
-                cellFirma.setCellValue(firma);
-                cellFirma.setCellStyle(cellStyle);
-
-                // Lector Óptico
-                List<EquipoUsuario> lectores = emp.getEquipos().stream()
-                        .filter(e -> "Lector Optico".equalsIgnoreCase(e.getTipo()))
-                        .collect(java.util.stream.Collectors.toList());
-
-                String lector = "";
-                if (lectores.size() == 1) {
-                    lector = lectores.get(0).getNumeroSerie();
-                } else if (lectores.size() > 1) {
-                    for (int i = 0; i < lectores.size(); i++) {
-                        lector += "Lector" + (i + 1) + ": " + lectores.get(i).getNumeroSerie();
-                        if (i < lectores.size() - 1) lector += "\n";
-                    }
-                }
-                Cell cellLectorOptico = row.createCell(6);
-                cellLectorOptico.setCellValue(lector);
-                cellLectorOptico.setCellStyle(cellStyle);
+                String comentario = emp.getComentario();
+                Cell cCom = row.createCell(7);
+                cCom.setCellValue(comentario != null ? comentario : "");
+                cCom.setCellStyle((comentario != null && !comentario.isBlank()) ? sComentario : est);
+                z++;
             }
 
-            // ================= SEPARADOR =================
-            rowNum++; // Línea en blanco
+            sheet.createRow(rowNum++).setHeightInPoints(10);
 
-            // ================= SECCIÓN 2: EQUIPOS DE OFICINA =================
-            Row headerOficina = sheet.createRow(rowNum++);
-            String[] columnasOficina = {"TIPO", "NÚMERO DE SERIE", "NOMBRE"};
-            for (int i = 0; i < columnasOficina.length; i++) {
-                Cell cell = headerOficina.createCell(i);
-                cell.setCellValue(columnasOficina[i]);
-                cell.setCellStyle(headerStyle);
+            Row rSecOfi = sheet.createRow(rowNum++); rSecOfi.setHeightInPoints(18);
+            Cell cSecOfi = rSecOfi.createCell(0);
+            cSecOfi.setCellValue("EQUIPAMIENTO DE OFICINA"); cSecOfi.setCellStyle(sSeccion);
+            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 7));
+
+            Row rHOfi = sheet.createRow(rowNum++); rHOfi.setHeightInPoints(22);
+            String[] colsOfi = {"TIPO", "NÚMERO DE SERIE", "NOMBRE"};
+            for (int i = 0; i < colsOfi.length; i++) {
+                Cell cell = rHOfi.createCell(i); cell.setCellValue(colsOfi[i]); cell.setCellStyle(sHeader);
             }
 
-            // Data - Equipos de Oficina
+            int zo = 0;
             for (EquipoOficina eq : rel.getEquiposOficina()) {
                 Row row = sheet.createRow(rowNum++);
-
-                Cell cellTipo = row.createCell(0);
-                cellTipo.setCellValue(eq.getTipo());
-                cellTipo.setCellStyle(cellStyle);
-
-                Cell cellSN = row.createCell(1);
-                cellSN.setCellValue(eq.getNumeroSerie());
-                cellSN.setCellStyle(cellStyle);
-
-                Cell cellNombre = row.createCell(2);
-                cellNombre.setCellValue(eq.getNombre() != null ? eq.getNombre() : "");
-                cellNombre.setCellStyle(cellStyle);
+                row.setHeight((short)-1); // auto-altura
+                XSSFCellStyle est = (zo % 2 == 0) ? sCelda : sCeldaZ;
+                Cell c0 = row.createCell(0); c0.setCellValue(eq.getTipo()); c0.setCellStyle(est);
+                Cell c1 = row.createCell(1); c1.setCellValue(eq.getNumeroSerie()); c1.setCellStyle(est);
+                Cell c2 = row.createCell(2); c2.setCellValue(eq.getNombre() != null ? eq.getNombre() : ""); c2.setCellStyle(est);
+                zo++;
             }
 
-            // Ajustar columnas
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 8; i++) {
                 sheet.autoSizeColumn(i);
-                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1000);
+                sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1200);
             }
+            sheet.setColumnWidth(0, sheet.getColumnWidth(0) + 2000);
+            sheet.setColumnWidth(7, Math.max(sheet.getColumnWidth(7), 9000));
 
             wb.write(out);
             return out.toByteArray();
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        } catch (Exception e) { e.printStackTrace(); return null; }
     }
 
-    // =====================================================================
-    // UTILIDAD - Leer empleados desde Excel
-    // =====================================================================
-    public static List<Empleado> leerEmpleadosDesdeExcel(MultipartFile archivo) {
-        List<Empleado> empleados = new ArrayList<>();
+    private static String buildEquipoText(Empleado emp, String tipo, String prefijo) {
+        List<EquipoUsuario> lista = emp.getEquipos().stream()
+                .filter(e -> tipo.equalsIgnoreCase(e.getTipo()))
+                .collect(java.util.stream.Collectors.toList());
 
-        try (Workbook workbook = WorkbookFactory.create(archivo.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
+        if (lista.isEmpty()) return "";
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
-
-                Cell cellNombre = row.getCell(0);
-                if (cellNombre == null) continue;
-
-                String nombre = cellNombre.getStringCellValue();
-                if (nombre != null && !nombre.trim().isEmpty()) {
-                    Empleado emp = new Empleado();
-                    emp.setNombre(nombre.trim());
-                    empleados.add(emp);
-                }
+        if (lista.size() == 1) {
+            EquipoUsuario eq = lista.get(0);
+            if (eq.getNombre() != null && !eq.getNombre().isEmpty()) {
+                return eq.getNumeroSerie() + "\n" + eq.getNombre();
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+            return eq.getNumeroSerie();
         }
 
-        return empleados;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lista.size(); i++) {
+            EquipoUsuario eq = lista.get(i);
+            sb.append(prefijo).append(i + 1).append(": ").append(eq.getNumeroSerie());
+            if (eq.getNombre() != null && !eq.getNombre().isEmpty()) {
+                sb.append("\n  ").append(eq.getNombre());
+            }
+            if (i < lista.size() - 1) sb.append("\n");
+        }
+        return sb.toString();
     }
 }

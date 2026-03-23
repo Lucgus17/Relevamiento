@@ -5,7 +5,7 @@ public class EquipoUsuario {
 
     private String tipo;
     private String numeroSerie;
-    private String nombre; // opcional
+    private String nombre;
 
     public EquipoUsuario(String tipo, String numeroSerie, String nombre) {
         this.tipo = tipo;

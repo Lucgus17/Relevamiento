@@ -8,9 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
+
+import java.util.*;
 
 @Controller
 public class HomeController {
@@ -20,13 +19,11 @@ public class HomeController {
     // ========================================================================
     @GetMapping("/")
     public String inicio(HttpSession session) {
-        // Limpiar relevamientos anteriores cuando se vuelve a inicio
         session.removeAttribute("relevamientoBienes");
         session.removeAttribute("relevamientoOficina");
         session.removeAttribute("nombreRelevamiento");
         session.removeAttribute("ultimoSerial");
         session.removeAttribute("relevamientoActivo");
-
         return "index";
     }
 
@@ -36,8 +33,9 @@ public class HomeController {
     @PostMapping("/iniciar-relevamiento")
     public String iniciarRelevamiento(
             @RequestParam("nombreRelevamiento") String nombre,
-            @RequestParam("archivo") MultipartFile archivo,
             @RequestParam("tipoRelevamiento") String tipo,
+            @RequestParam(value = "modoOficinas", required = false) String modoOficinas,
+            @RequestParam(value = "archivo", required = false) MultipartFile archivo,
             Model model,
             HttpSession session
     ) {
@@ -45,29 +43,30 @@ public class HomeController {
 
         // ===================== OFICINAS =====================
         if ("OFICINAS".equals(tipo)) {
-            // Leer empleados del excel
-            List<Empleado> empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
+            List<Empleado> empleados = new ArrayList<>();
 
-            // Crear relevamiento oficina
+            if ("CON_EXCEL".equals(modoOficinas)
+                    && archivo != null
+                    && !archivo.isEmpty()) {
+                empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
+            }
+
             RelevamientoOficina rel = new RelevamientoOficina(nombre);
-
-            // Iniciar con empleados
             rel.iniciar(nombre, empleados);
-
-            // Guardar en sesión
             session.setAttribute("relevamientoOficina", rel);
 
             return "redirect:/oficinas/relevamiento";
         }
 
         // ===================== BIENES =====================
-        List<String> seriales = ExcelService.leerSeriales(archivo);
+        if (archivo == null || archivo.isEmpty()) {
+            return "redirect:/";
+        }
 
-        // ⚠️ CREAR NUEVA INSTANCIA EN LUGAR DE USAR SINGLETON
+        List<String> seriales = ExcelService.leerSeriales(archivo);
         Relevamiento relevamiento = new Relevamiento();
         relevamiento.cargarSeriales(seriales);
 
-        // Guardar en sesión
         session.setAttribute("relevamientoBienes", relevamiento);
         session.setAttribute("relevamientoActivo", true);
         session.setAttribute("ultimoSerial", null);
@@ -76,16 +75,12 @@ public class HomeController {
     }
 
     // ========================================================================
-    // RELEVAMIENTO BIENES - OPERACIONES
+    // RELEVAMIENTO BIENES
     // ========================================================================
-
     @GetMapping("/relevamiento")
     public String mostrarRelevamiento(Model model, HttpSession session) {
         Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
-
-        if (relevamiento == null) {
-            return "redirect:/";
-        }
+        if (relevamiento == null) return "redirect:/";
 
         model.addAttribute("todosLosSeriales", relevamiento.getNumeroSerialEsperado());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado());
@@ -105,7 +100,6 @@ public class HomeController {
             HttpSession session
     ) {
         Map<String, String> response = new HashMap<>();
-
         Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
         if (relevamiento == null) {
@@ -120,38 +114,27 @@ public class HomeController {
             session.setAttribute("ultimoSerial", serial);
             response.put("serialProcesado", serial);
             return response;
-        }
-
-        else if ("noInventariado".equals(accion)) {
-            // Usuario rechazó la sugerencia, agregar como sobrante
+        } else if ("noInventariado".equals(accion)) {
             relevamiento.agregarSobrante(serial);
             response.put("serialProcesado", serial);
-
         } else {
-            // VERIFICAR SI YA EXISTE EN ENCONTRADOS O SOBRANTES
             boolean yaEncontrado = relevamiento.getNumeroSerialEncontrado().stream()
                     .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
-
             boolean yaSobrante = relevamiento.getNumeroSerialSobrante().stream()
                     .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
             if (yaEncontrado || yaSobrante) {
-                // Ya existe, solo resaltarlo
                 response.put("yaExiste", "true");
                 response.put("serialProcesado", serial);
                 session.setAttribute("ultimoSerial", serial);
                 return response;
             }
 
-            // Procesamiento normal con lógica de Levenshtein
             String sugerencia = relevamiento.procesarInputConSugerencia(serial);
-
             if (sugerencia != null) {
-                // Hay sugerencia, devolver al frontend para mostrar modal
                 response.put("sugerencia", sugerencia);
                 response.put("serialOriginal", serial);
             } else {
-                // No hay sugerencia, ya fue procesado
                 response.put("serialProcesado", serial);
             }
         }
@@ -167,14 +150,12 @@ public class HomeController {
             HttpSession session
     ) {
         Map<String, String> response = new HashMap<>();
-
         Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
         if (relevamiento == null) {
             response.put("error", "No hay relevamiento activo");
             return response;
         }
-
         relevamiento.eliminar(serial);
         response.put("success", "true");
         return response;
@@ -185,32 +166,26 @@ public class HomeController {
         String nombre = (String) session.getAttribute("nombreRelevamiento");
         Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-        if (relevamiento == null) {
-            return "redirect:/";
-        }
+        if (relevamiento == null) return "redirect:/";
 
         model.addAttribute("nombreRelevamiento", nombre);
         model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
         model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
 
-        // ⭐ Mantener el relevamiento en sesión para que persista al volver con flecha
         return "finalizado";
     }
 
     // ========================================================================
-    // EXPORTACIÓN BIENES - SOLO EXCEL
+    // EXPORTACIÓN BIENES
     // ========================================================================
-
     @GetMapping("/exportar-excel")
     public ResponseEntity<byte[]> exportarExcelBienes(HttpSession session) {
         try {
             String nombre = (String) session.getAttribute("nombreRelevamiento");
             Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-            if (relevamiento == null || nombre == null) {
-                return ResponseEntity.status(404).build();
-            }
+            if (relevamiento == null || nombre == null) return ResponseEntity.status(404).build();
 
             byte[] excel = ExportService.generarExcel(
                     nombre,
@@ -218,16 +193,11 @@ public class HomeController {
                     relevamiento.getNumeroSerialEncontrado(),
                     relevamiento.getNumeroSerialSobrante()
             );
-
-            if (excel == null) {
-                return ResponseEntity.status(500).build();
-            }
+            if (excel == null) return ResponseEntity.status(500).build();
 
             String filename = ExportService.generarNombreArchivo(nombre, "xlsx");
-
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(excel);
 
@@ -238,30 +208,22 @@ public class HomeController {
     }
 
     // ========================================================================
-    // EXPORTACIÓN OFICINAS - SOLO EXCEL
+    // EXPORTACIÓN OFICINAS
     // ========================================================================
-
     @GetMapping("/oficinas/exportar/excel")
     public ResponseEntity<byte[]> exportarExcelOficinas(HttpSession session) {
         try {
             RelevamientoOficina rel =
                     (RelevamientoOficina) session.getAttribute("relevamientoOficina");
 
-            if (rel == null) {
-                return ResponseEntity.status(404).build();
-            }
+            if (rel == null) return ResponseEntity.status(404).build();
 
             byte[] excel = ExportService.generarExcelOficinas(rel);
-
-            if (excel == null) {
-                return ResponseEntity.status(500).build();
-            }
+            if (excel == null) return ResponseEntity.status(500).build();
 
             String filename = ExportService.generarNombreArchivo(rel.getNombre(), "xlsx");
-
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + filename + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(excel);
 
@@ -272,9 +234,8 @@ public class HomeController {
     }
 
     // ========================================================================
-    // API JSON - DATOS EN TIEMPO REAL
+    // API JSON - BIENES (el de oficinas vive en OficinaController)
     // ========================================================================
-
     @GetMapping("/api/bienes/data")
     @ResponseBody
     public Map<String, Object> obtenerDatosBienes(HttpSession session) {
@@ -282,7 +243,6 @@ public class HomeController {
         String nombre = (String) session.getAttribute("nombreRelevamiento");
 
         Map<String, Object> response = new HashMap<>();
-
         if (relevamiento != null) {
             response.put("esperados", relevamiento.getNumeroSerialEsperado());
             response.put("encontrados", relevamiento.getNumeroSerialEncontrado());
@@ -290,15 +250,26 @@ public class HomeController {
             response.put("conteos", relevamiento.contarNumerosSeriales());
             response.put("nombreRelevamiento", nombre);
         }
+        return response;
+    }
+    // ========================================================================
+    // API JSON - OFICINAS
+    // ========================================================================
+    @GetMapping("/api/oficinas/data")
+    @ResponseBody
+    public Map<String, Object> obtenerDatosOficina(HttpSession session) {
+        RelevamientoOficina rel =
+                (RelevamientoOficina) session.getAttribute("relevamientoOficina");
 
+        Map<String, Object> response = new HashMap<>();
+        if (rel != null) {
+            response.put("empleados", rel.getEmpleados());
+            response.put("equiposOficina", rel.getEquiposOficina());
+        } else {
+            response.put("empleados", new ArrayList<>());
+            response.put("equiposOficina", new ArrayList<>());
+        }
         return response;
     }
 
-    @GetMapping("/api/oficinas/data")
-    @ResponseBody
-    public RelevamientoOficina obtenerDatosOficina(HttpSession session) {
-        RelevamientoOficina rel =
-                (RelevamientoOficina) session.getAttribute("relevamientoOficina");
-        return rel;
-    }
 }

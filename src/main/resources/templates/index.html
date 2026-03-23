@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <title>Inicio - Relevamiento</title>
 
-    <!-- BOOTSTRAP -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-        /* ============================= */
-        /* 🔹 FONDO ANIMADO TIPO ESCÁNER 🔹 */
         body {
             margin: 0;
             padding: 0;
@@ -45,12 +42,10 @@
         }
 
         @keyframes scan {
-            0% { top: -120%; }
-            100% { top: 120%; }
+            0%   { top: -120%; }
+            100% { top:  120%; }
         }
 
-        /* ============================= */
-        /* 🔹 CARD PRINCIPAL 🔹 */
         .main-card {
             position: relative;
             z-index: 1;
@@ -79,8 +74,6 @@
             font-size: 1rem;
         }
 
-        /* ============================= */
-        /* 🔹 BOTÓN PRINCIPAL CON GLOW 🔹 */
         .btn-start {
             width: 100%;
             padding: 1rem;
@@ -97,17 +90,13 @@
 
         .btn-start:hover {
             background: #16a34a;
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.8),
-                        0 0 40px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.5);
             transform: translateY(-2px);
         }
 
-        .btn-start i {
-            margin-right: 0.5rem;
-        }
+        .btn-start i { margin-right: 0.5rem; }
 
-        /* ============================= */
-        /* 🔹 MODALES 🔹 */
+        /* Modales */
         .modal-content {
             background: #111827;
             border: 1px solid #374151;
@@ -115,28 +104,12 @@
             box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
         }
 
-        .modal-header {
-            border-bottom: 1px solid #374151;
-            padding: 1.25rem 1.5rem;
-        }
+        .modal-header { border-bottom: 1px solid #374151; padding: 1.25rem 1.5rem; }
+        .modal-title  { color: #22c55e; font-weight: 600; font-size: 1.25rem; }
+        .modal-body   { padding: 1.5rem; }
+        .modal-footer { border-top: 1px solid #374151; padding: 1rem 1.5rem; }
 
-        .modal-title {
-            color: #22c55e;
-            font-weight: 600;
-            font-size: 1.25rem;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #374151;
-            padding: 1rem 1.5rem;
-        }
-
-        /* ============================= */
-        /* 🔹 BOTONES DE TIPO 🔹 */
+        /* Botones de tipo en modal de selección */
         .btn-tipo {
             width: 100%;
             padding: 1.25rem;
@@ -161,22 +134,65 @@
             transform: translateY(-2px);
         }
 
-        .btn-tipo i {
-            font-size: 1.5rem;
-        }
-
-        .btn-tipo.bienes:hover {
-            border-color: #22c55e;
-            color: #22c55e;
-        }
+        .btn-tipo i { font-size: 1.5rem; }
 
         .btn-tipo.oficinas:hover {
             border-color: #3b82f6;
             color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         }
 
-        /* ============================= */
-        /* 🔹 FORMULARIO 🔹 */
+        /* ─── Selector de carga de oficinas ─── */
+        /* Dos tarjetas para elegir entre "Con Excel" y "Sin Excel" */
+        .opcion-carga-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .opcion-carga-card {
+            border: 2px solid #374151;
+            border-radius: 12px;
+            padding: 1.5rem 1rem;
+            background: #1a2233;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            color: #e5e7eb;
+            user-select: none;
+        }
+
+        .opcion-carga-card:hover {
+            border-color: #22c55e;
+            background: #1f2937;
+            box-shadow: 0 0 18px rgba(34, 197, 94, 0.25);
+            transform: translateY(-3px);
+        }
+
+        .opcion-carga-card.opcion-sin-excel:hover {
+            border-color: #f97316;
+            box-shadow: 0 0 18px rgba(249, 115, 22, 0.25);
+        }
+
+        .opcion-carga-card i {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.6rem;
+        }
+
+        .opcion-carga-card .opcion-titulo {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .opcion-carga-card .opcion-desc {
+            font-size: 0.78rem;
+            color: #9ca3af;
+            line-height: 1.4;
+        }
+
+        /* Formularios en modales */
         .form-label {
             color: #e5e7eb;
             font-weight: 500;
@@ -200,18 +216,9 @@
             box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.25);
         }
 
-        .form-control::placeholder {
-            color: #6b7280;
-        }
+        .form-control::placeholder { color: #6b7280; }
+        .form-text { color: #9ca3af; font-size: 0.875rem; margin-top: 0.5rem; }
 
-        .form-text {
-            color: #9ca3af;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-
-        /* ============================= */
-        /* 🔹 BOTONES DEL MODAL 🔹 */
         .btn-secondary-custom {
             background: #374151;
             border: none;
@@ -243,12 +250,8 @@
             transform: translateY(-1px);
         }
 
-        .btn-close {
-            filter: invert(1);
-        }
+        .btn-close { filter: invert(1); }
 
-        /* ============================= */
-        /* 🔹 ICONOS DECORATIVOS 🔹 */
         .icon-decoration {
             position: absolute;
             font-size: 8rem;
@@ -258,15 +261,8 @@
             pointer-events: none;
         }
 
-        .icon-top-left {
-            top: -2rem;
-            left: -2rem;
-        }
-
-        .icon-bottom-right {
-            bottom: -2rem;
-            right: -2rem;
-        }
+        .icon-top-left    { top: -2rem;    left: -2rem;  }
+        .icon-bottom-right{ bottom: -2rem; right: -2rem; }
     </style>
 </head>
 
@@ -274,16 +270,11 @@
 
 <div class="container vh-100 d-flex justify-content-center align-items-center">
     <div class="main-card">
-        <!-- Iconos decorativos -->
         <i class="bi bi-clipboard-check icon-decoration icon-top-left"></i>
         <i class="bi bi-upc-scan icon-decoration icon-bottom-right"></i>
 
-        <h1>
-            <i class="bi bi-gear-fill"></i> Sistema de Relevamiento
-        </h1>
-        <p class="subtitle">
-            Gestión eficiente de inventario y equipamiento
-        </p>
+        <h1><i class="bi bi-gear-fill"></i> Sistema de Relevamiento</h1>
+        <p class="subtitle">Gestión eficiente de inventario y equipamiento</p>
 
         <button class="btn btn-start"
                 data-bs-toggle="modal"
@@ -293,22 +284,21 @@
     </div>
 </div>
 
-<!-- ===============================
-     MODAL SELECCIÓN TIPO
-================================ -->
+<!-- ══════════════════════════════════════════════
+     MODAL 1 – Selección tipo de relevamiento
+═══════════════════════════════════════════════ -->
 <div class="modal fade" id="modalTipoRelevamiento" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="bi bi-list-check"></i> Seleccione el tipo de relevamiento
+                    <i class="bi bi-list-check"></i> Tipo de relevamiento
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
             <div class="modal-body">
 
+                <!-- Bienes → va directo al modal de Excel -->
                 <button class="btn btn-tipo bienes mb-3"
                         data-bs-dismiss="modal"
                         data-bs-toggle="modal"
@@ -318,28 +308,190 @@
                     <span>Relevamiento de Bienes</span>
                 </button>
 
+                <!-- Oficinas → va al modal de opción de carga -->
                 <button class="btn btn-tipo oficinas"
                         data-bs-dismiss="modal"
                         data-bs-toggle="modal"
-                        data-bs-target="#modalExcel"
-                        onclick="setTipo('OFICINAS')">
+                        data-bs-target="#modalOpcionOficinas">
                     <i class="bi bi-building"></i>
                     <span>Relevamiento de Oficinas</span>
                 </button>
 
             </div>
-
         </div>
     </div>
 </div>
 
-<!-- ===============================
-     MODAL CARGA EXCEL
-================================ -->
+<!-- ══════════════════════════════════════════════
+     MODAL 2 – Cómo cargar usuarios (Oficinas)
+     Dos opciones: Con Excel  |  Sin Excel
+═══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalOpcionOficinas" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-building"></i> Relevamiento de Oficinas
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p style="color:#9ca3af;font-size:0.9rem;margin-bottom:1.25rem;">
+                    ¿Cómo querés cargar los empleados?
+                </p>
+
+                <div class="opcion-carga-grid">
+                    <!-- Opción A: Con Excel -->
+                    <div class="opcion-carga-card"
+                         onclick="elegirOpcionOficinas('excel')">
+                        <i class="bi bi-file-earmark-excel" style="color:#22c55e;"></i>
+                        <div class="opcion-titulo">Tengo un Excel</div>
+                        <div class="opcion-desc">Importar lista de empleados desde un archivo .xls / .xlsx</div>
+                    </div>
+
+                    <!-- Opción B: Sin Excel -->
+                    <div class="opcion-carga-card opcion-sin-excel"
+                         onclick="elegirOpcionOficinas('manual')">
+                        <i class="bi bi-person-plus" style="color:#f97316;"></i>
+                        <div class="opcion-titulo">Sin Excel</div>
+                        <div class="opcion-desc">Empezar con la oficina vacía y cargar cada empleado a mano</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-secondary-custom"
+                        data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL 3a – Oficinas CON Excel
+═══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalExcelOficinas" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/iniciar-relevamiento}"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden" name="tipoRelevamiento" value="OFICINAS">
+                <!-- modoOficinas = CON_EXCEL indica que viene lista de empleados -->
+                <input type="hidden" name="modoOficinas"     value="CON_EXCEL">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-excel"></i> Cargar Excel de empleados
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Nombre del Relevamiento
+                        </label>
+                        <input type="text"
+                               name="nombreRelevamiento"
+                               class="form-control"
+                               placeholder="Ej: Oficinas Piso 3 – Mayo 2025"
+                               required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-upload"></i> Archivo Excel
+                        </label>
+                        <input type="file"
+                               name="archivo"
+                               class="form-control"
+                               required
+                               accept=".xls,.xlsx">
+                        <div class="form-text">Formatos aceptados: .xls, .xlsx</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary-custom"
+                            onclick="volverAOpcionOficinas()"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <button type="submit" class="btn btn-success-custom">
+                        <i class="bi bi-play-fill"></i> Iniciar Relevamiento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL 3b – Oficinas SIN Excel (solo nombre)
+═══════════════════════════════════════════════ -->
+<div class="modal fade" id="modalSinExcelOficinas" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form th:action="@{/iniciar-relevamiento}"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                <input type="hidden" name="tipoRelevamiento" value="OFICINAS">
+                <!-- modoOficinas = SIN_EXCEL → el backend inicia sin empleados -->
+                <input type="hidden" name="modoOficinas"     value="SIN_EXCEL">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-building"></i> Nueva oficina vacía
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p style="color:#9ca3af;font-size:0.875rem;margin-bottom:1rem;">
+                        Se iniciará el relevamiento sin empleados cargados. Podrás agregarlos uno a uno desde la pantalla principal.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Nombre del Relevamiento
+                        </label>
+                        <input type="text"
+                               name="nombreRelevamiento"
+                               class="form-control"
+                               placeholder="Ej: Oficinas Piso 3 – Mayo 2025"
+                               required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary-custom"
+                            onclick="volverAOpcionOficinas()"
+                            data-bs-dismiss="modal">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <button type="submit" class="btn btn-success-custom">
+                        <i class="bi bi-play-fill"></i> Iniciar Relevamiento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL – Bienes (Excel) — sin cambios
+═══════════════════════════════════════════════ -->
 <div class="modal fade" id="modalExcel" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-
             <form th:action="@{/iniciar-relevamiento}"
                   method="post"
                   enctype="multipart/form-data">
@@ -354,7 +506,6 @@
                 </div>
 
                 <div class="modal-body">
-
                     <div class="mb-3">
                         <label class="form-label">
                             <i class="bi bi-tag"></i> Nombre del Relevamiento
@@ -375,11 +526,8 @@
                                class="form-control"
                                required
                                accept=".xls,.xlsx">
-                        <div class="form-text">
-                            Formatos aceptados: .xls, .xlsx
-                        </div>
+                        <div class="form-text">Formatos aceptados: .xls, .xlsx</div>
                     </div>
-
                 </div>
 
                 <div class="modal-footer">
@@ -388,24 +536,42 @@
                             data-bs-dismiss="modal">
                         <i class="bi bi-x-circle"></i> Cancelar
                     </button>
-
-                    <button type="submit"
-                            class="btn btn-success-custom">
+                    <button type="submit" class="btn btn-success-custom">
                         <i class="bi bi-play-fill"></i> Iniciar Relevamiento
                     </button>
                 </div>
-
             </form>
         </div>
     </div>
 </div>
 
-<!-- BOOTSTRAP JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
     function setTipo(tipo) {
         document.getElementById("tipoRelevamiento").value = tipo;
+    }
+
+    /**
+     * Desde el modal de opción de oficinas, redirige al sub-modal correcto.
+     * @param {'excel'|'manual'} opcion
+     */
+    function elegirOpcionOficinas(opcion) {
+        // Cerrar el modal de opciones
+        const modalOpcion = bootstrap.Modal.getInstance(document.getElementById('modalOpcionOficinas'));
+        if (modalOpcion) modalOpcion.hide();
+
+        // Abrir el modal correspondiente después de que termine la animación de cierre
+        setTimeout(() => {
+            const targetId = opcion === 'excel' ? 'modalExcelOficinas' : 'modalSinExcelOficinas';
+            new bootstrap.Modal(document.getElementById(targetId)).show();
+        }, 300);
+    }
+
+    /** Vuelve al modal de opción de oficinas desde un sub-modal */
+    function volverAOpcionOficinas() {
+        setTimeout(() => {
+            new bootstrap.Modal(document.getElementById('modalOpcionOficinas')).show();
+        }, 300);
     }
 </script>
 

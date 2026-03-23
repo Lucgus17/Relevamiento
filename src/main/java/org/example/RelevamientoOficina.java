@@ -1,6 +1,5 @@
 package org.example;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,6 +72,7 @@ public class RelevamientoOficina {
                 .filter(eq -> "Firma digital".equalsIgnoreCase(eq.getTipo()))
                 .count();
     }
+
     public int getTotalLectorOptico() {
         return (int) empleados.stream()
                 .flatMap(e -> e.getEquipos().stream())

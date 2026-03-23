@@ -25,6 +25,7 @@
             font-size: 1.8rem;
         }
 
+        /* ─── ACCORDION ─── */
         .accordion-item {
             background:#181b23;
             border:1px solid #2f3442;
@@ -33,11 +34,12 @@
             position: relative;
         }
 
+        /* Espacio para: badge + btn-comentario + btn-eliminar */
         .accordion-button {
             background:#181b23;
             color:#e5e7eb;
             font-weight:500;
-            padding-right: 8rem;
+            padding-right: 11rem;
         }
 
         .accordion-button:not(.collapsed) {
@@ -45,51 +47,157 @@
             color:#22c55e;
         }
 
+        /* ─── ZONA DERECHA: badge + botones en fila ─── */
+        .header-right {
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
         .badge-contador {
-            position: absolute;
-            top: 50%;
-            right: 4rem;
-            transform: translateY(-50%);
-            padding: 0.25rem 0.75rem;
+            padding: 0.25rem 0.65rem;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            z-index: 10;
+            white-space: nowrap;
             pointer-events: none;
-            transition: all 0.3s ease;
+            flex-shrink: 0;
+            transition: background 0.3s;
         }
 
-        .badge-sin-equipos {
-            background: #6b7280;
-            color: #f3f4f6;
-        }
+        .badge-sin-equipos { background: #6b7280; color: #f3f4f6; }
+        .badge-con-equipos { background: #22c55e; color: #0f1117; }
 
-        .badge-con-equipos {
-            background: #22c55e;
-            color: #0f1117;
-        }
-
-        .btn-eliminar-empleado {
-            position: absolute;
-            top: 50%;
-            right: 1rem;
-            transform: translateY(-50%);
-            z-index: 10;
-            background: rgba(239, 68, 68, 0.9);
+        /* Botones: ocultos por defecto, visibles al hover */
+        .btn-accion-empleado {
             border: none;
             border-radius: 6px;
-            padding: 0.35rem 0.65rem;
+            padding: 0.3rem 0.6rem;
             color: white;
             cursor: pointer;
-            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.15s ease, background 0.15s ease;
+        }
+
+        .accordion-item:hover .btn-accion-empleado { opacity: 1; }
+
+        .btn-comentar-empleado { background: rgba(249,115,22,0.9); }
+        .btn-comentar-empleado:hover { background: #ea6400; transform: scale(1.1); }
+
+        .btn-eliminar-empleado { background: rgba(239,68,68,0.9); }
+        .btn-eliminar-empleado:hover { background: #dc2626; transform: scale(1.1); }
+
+        /* ─── TOOLTIP COMENTARIO ─── */
+        .comentario-tooltip {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 1rem;
+            right: 1rem;
+            background: #1e2636;
+            border: 1px solid #f97316;
+            border-radius: 8px;
+            padding: 0.55rem 0.85rem;
+            font-size: 0.8rem;
+            color: #fcd9b0;
+            line-height: 1.5;
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(-4px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            box-shadow: 0 4px 16px rgba(249,115,22,0.18);
+            word-break: break-word;
+        }
+
+        .comentario-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 1.2rem;
+            width: 10px; height: 10px;
+            background: #1e2636;
+            border-left: 1px solid #f97316;
+            border-top: 1px solid #f97316;
+            transform: rotate(45deg);
+        }
+
+        .accordion-item.tiene-comentario:hover .comentario-tooltip {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ─── ESTADO VACÍO (sin equipos asignados) ─── */
+        .estado-vacio {
+            background: rgba(249,115,22,0.08);
+            border: 1px dashed #f97316;
+            border-radius: 6px;
+            padding: 0.4rem 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #f97316;
+            font-size: 0.8rem;
+        }
+        .estado-vacio i { font-size: 1rem; }
+
+        /* ─── ESTADO SIN EMPLEADOS (cartel grande) ─── */
+        .sin-empleados-estado {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3.5rem 2rem;
+            background: rgba(34,197,94,0.03);
+            border: 2px dashed #374151;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+        }
+        .sin-empleados-estado:hover { border-color: #22c55e; }
+
+        .sin-empleados-estado .icono-grande {
+            font-size: 3.5rem;
+            color: #374151;
+            margin-bottom: 1rem;
+            transition: color 0.3s;
+        }
+        .sin-empleados-estado:hover .icono-grande { color: #22c55e; }
+
+        .sin-empleados-estado .titulo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 0.35rem;
+        }
+        .sin-empleados-estado .subtitulo {
             font-size: 0.875rem;
+            color: #4b5563;
+        }
+        .sin-empleados-estado .flecha {
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #22c55e;
+            font-size: 0.875rem;
+            font-weight: 600;
+            animation: bounce-up 1.6s ease-in-out infinite;
+        }
+        @keyframes bounce-up {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-7px); }
         }
 
-        .btn-eliminar-empleado:hover {
-            background: #dc2626;
-            transform: translateY(-50%) scale(1.1);
-        }
-
+        /* ─── GRID EQUIPOS ─── */
         .equipos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -111,137 +219,64 @@
         .equipo-card:hover {
             border-color: #22c55e;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+            box-shadow: 0 4px 12px rgba(34,197,94,0.15);
         }
 
-        .equipo-card:hover .btn-trash {
-            opacity: 1;
-        }
+        .equipo-card:hover .btn-trash { opacity: 1; }
 
         .btn-trash {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            background: rgba(239, 68, 68, 0.9);
-            border: none;
-            border-radius: 6px;
-            padding: 0.25rem 0.5rem;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 0;
-            z-index: 5;
+            position: absolute; top: 0.5rem; right: 0.5rem;
+            background: rgba(239,68,68,0.9); border: none; border-radius: 6px;
+            padding: 0.25rem 0.5rem; color: white; cursor: pointer;
+            transition: all 0.2s ease; opacity: 0; z-index: 5;
+        }
+        .btn-trash:hover { background: #dc2626; transform: scale(1.1); }
+        .btn-trash i { font-size: 0.875rem; }
+
+        .equipo-icon-container { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .equipo-icon { width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; }
+
+        .icon-cpu       { background: rgba(59,130,246,0.15);  color: #3b82f6; }
+        .icon-monitor   { background: rgba(139,92,246,0.15);  color: #8b5cf6; }
+        .icon-phone     { background: rgba(34,197,94,0.15);   color: #22c55e; }
+        .icon-camera    { background: rgba(234,179,8,0.15);   color: #eab308; }
+        .icon-firma     { background: rgba(236,72,153,0.15);  color: #ec4899; }
+        .icon-lector    { background: rgba(6,182,212,0.15);   color: #06b6d4; }
+        .icon-impresora { background: rgba(249,115,22,0.15);  color: #f97316; }
+        .icon-escaner   { background: rgba(6,182,212,0.15);   color: #06b6d4; }
+
+        .equipo-tipo { font-size:0.875rem; font-weight:600; color:#e5e7eb; letter-spacing:0.025em; }
+
+        .equipo-info { margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid #374151; }
+        .info-label { color:#9ca3af; font-size:0.75rem; font-weight:500; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.25rem; }
+        .info-value { color:#e5e7eb; font-family:'Courier New',monospace; background:rgba(0,0,0,0.3); padding:0.25rem 0.5rem; border-radius:4px; font-size:0.813rem; word-break:break-all; overflow-wrap:break-word; line-height:1.4; max-width:100%; }
+        .equipo-nombre { margin-top:0.5rem; }
+
+        /* ─── MODAL COMENTARIO ─── */
+        #modalComentarioEmpleado .modal-content {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(249,115,22,0.12);
+        }
+        #modalComentarioEmpleado .modal-header { border-bottom: 1px solid #374151; }
+        #modalComentarioEmpleado .modal-title  { color: #f97316; font-weight: 600; }
+        #modalComentarioEmpleado .modal-footer { border-top: 1px solid #374151; }
+        #modalComentarioEmpleado textarea {
+            background: #1f2937; border: 1px solid #374151; color: #e5e7eb;
+            border-radius: 8px; resize: vertical; min-height: 110px;
+            font-size: 0.9rem; width: 100%; padding: 0.65rem 0.85rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        #modalComentarioEmpleado textarea:focus {
+            outline: none; border-color: #f97316;
+            box-shadow: 0 0 0 3px rgba(249,115,22,0.15); background: #1a2535;
         }
 
-        .btn-trash:hover {
-            background: #dc2626;
-            transform: scale(1.1);
-        }
-
-        .btn-trash i {
-            font-size: 0.875rem;
-        }
-
-        .equipo-icon-container {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .equipo-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .icon-cpu { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
-        .icon-monitor { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
-        .icon-phone { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-        .icon-camera { background: rgba(234, 179, 8, 0.15); color: #eab308; }
-        .icon-firma { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
-        .icon-lector { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
-        .icon-impresora { background: rgba(249, 115, 22, 0.15); color: #f97316; }
-        .icon-escaner { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
-
-        .equipo-tipo {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #e5e7eb;
-            letter-spacing: 0.025em;
-        }
-
-        .equipo-info {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid #374151;
-        }
-
-        .info-label {
-            color: #9ca3af;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.25rem;
-        }
-
-        .info-value {
-            color: #e5e7eb;
-            font-family: 'Courier New', monospace;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.813rem;
-            word-break: break-all;
-            overflow-wrap: break-word;
-            line-height: 1.4;
-            max-width: 100%;
-        }
-
-        .equipo-nombre {
-            margin-top: 0.5rem;
-        }
-
-        .estado-vacio {
-            background: rgba(249, 115, 22, 0.1);
-            border: 1px dashed #f97316;
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-            color: #f97316;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .estado-vacio i {
-            font-size: 1.5rem;
-        }
-
-        .estado-vacio div {
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-        }
-
-        .box {
-            background:#111827;
-            border:1px solid #374151;
-            border-radius:10px;
-            padding:1rem;
-        }
-
-        .box-title {
-            font-size:.9rem;
-            color:#9ca3af;
-            margin-bottom:.75rem;
-        }
+        /* ─── BOX OFICINA ─── */
+        .box { background:#111827; border:1px solid #374151; border-radius:10px; padding:1rem; }
+        .box-title { font-size:.9rem; color:#9ca3af; margin-bottom:.75rem; }
     </style>
-
 </head>
 
 <body>
@@ -258,11 +293,9 @@
         <input id="nombreEmpleado"
                class="form-control form-control-sm w-50"
                placeholder="Nombre del empleado" required>
-
         <button type="submit" class="btn btn-success btn-sm">
             <i class="bi bi-person-plus"></i> Agregar
         </button>
-
         <a href="/oficinas/finalizado" class="btn btn-danger btn-sm ms-auto">
             Finalizar
         </a>
@@ -274,43 +307,79 @@
     <!-- OFICINA -->
     <div class="box mt-5">
         <div class="box-title">Equipamiento de Oficina</div>
-
         <div id="listaOficina" class="mb-3"></div>
-
-        <form onsubmit="agregarEquipoOficina(event)"
-              class="row g-2 align-items-end">
-
+        <form onsubmit="agregarEquipoOficina(event)" class="row g-2 align-items-end">
             <div class="col-md-3">
                 <select id="tipoOficina" class="form-select form-select-sm" onchange="toggleNombreOficina()">
                     <option>IMPRESORA</option>
                     <option>ESCANER</option>
                 </select>
             </div>
-
             <div class="col-md-4">
-                <input id="serieOficina"
-                       class="form-control form-control-sm"
-                       placeholder="Número de serie" required>
+                <input id="serieOficina" class="form-control form-control-sm" placeholder="Número de serie" required>
             </div>
-
             <div class="col-md-3" id="nombreOficinaContainer">
-                <input id="nombreOficina"
-                       class="form-control form-control-sm"
-                       placeholder="Nombre (opcional)">
+                <input id="nombreOficina" class="form-control form-control-sm" placeholder="Nombre (opcional)">
             </div>
-
             <div class="col-md-2">
-                <button class="btn btn-success btn-sm w-100">
-                    Agregar
-                </button>
+                <button class="btn btn-success btn-sm w-100">Agregar</button>
             </div>
         </form>
-
     </div>
 
 </div>
 
-<!-- Modal Eliminar Equipo -->
+<!-- ════════ MODAL Comentario ════════ -->
+<div class="modal fade" id="modalComentarioEmpleado" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-chat-left-text me-2"></i>
+                    Comentario — <span id="modalComentarioNombre"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Historial de comentarios previos (solo lectura) -->
+                <div id="modalComentarioPrevio" style="display:none; margin-bottom:0.75rem;">
+                    <div style="font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem;">
+                        <i class="bi bi-clock-history me-1"></i>Comentario actual
+                    </div>
+                    <div id="modalComentarioPrevioTexto"
+                         style="background:#0f1117;border:1px solid #374151;border-radius:6px;
+                                padding:0.5rem 0.75rem;font-size:0.825rem;color:#d1d5db;
+                                white-space:pre-wrap;line-height:1.5;max-height:120px;overflow-y:auto;">
+                    </div>
+                </div>
+                <div style="font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem;">
+                    <i class="bi bi-pencil me-1"></i>Nuevo comentario
+                </div>
+                <textarea id="modalComentarioTexto"
+                          placeholder="Agregá una observación sobre este empleado..."
+                          rows="3"></textarea>
+                <div style="font-size:0.75rem;color:#6b7280;margin-top:0.4rem;">
+                    Se agregará al comentario existente.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-outline-danger"
+                        id="btnBorrarComentario"
+                        onclick="borrarComentarioModal()"
+                        style="display:none;">
+                    <i class="bi bi-trash3 me-1"></i> Borrar Comentario
+                </button>
+                <button type="button" class="btn btn-warning text-dark fw-semibold"
+                        onclick="guardarComentarioModal()">
+                    <i class="bi bi-floppy me-1"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════ MODAL Eliminar Equipo ════════ -->
 <div class="modal fade" id="modalEliminarEquipo" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-light border-secondary">
@@ -321,7 +390,7 @@
             <div class="modal-body">
                 ¿Está seguro que desea eliminar este equipo?
                 <div class="mt-2">
-                    <strong>Serie:</strong> <span id="modalSerial" style="word-break: break-all;"></span>
+                    <strong>Serie:</strong> <span id="modalSerial" style="word-break:break-all;"></span>
                 </div>
             </div>
             <div class="modal-footer border-secondary">
@@ -332,7 +401,7 @@
     </div>
 </div>
 
-<!-- Modal Eliminar Empleado -->
+<!-- ════════ MODAL Eliminar Empleado ════════ -->
 <div class="modal fade" id="modalEliminarEmpleado" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-light border-secondary">
@@ -364,26 +433,27 @@
     let empleados = [];
     let equiposOficina = [];
     let eliminarData = { tipo: '', indexEmpleado: -1, indexEquipo: -1, serial: '', nombre: '' };
+    let comentarioIndexActivo = -1;
 
     const iconosEquipo = {
-        'CPU': { icon: 'bi-cpu', class: 'icon-cpu' },
-        'Monitor': { icon: 'bi-display', class: 'icon-monitor' },
-        'Teléfono IP': { icon: 'bi-telephone', class: 'icon-phone' },
-        'Cámara': { icon: 'bi-camera-video', class: 'icon-camera' },
-        'Firma digital': { icon: 'bi-pen', class: 'icon-firma' },
+        'CPU':           { icon: 'bi-cpu',         class: 'icon-cpu' },
+        'Monitor':       { icon: 'bi-display',      class: 'icon-monitor' },
+        'Teléfono IP':   { icon: 'bi-telephone',    class: 'icon-phone' },
+        'Cámara':        { icon: 'bi-camera-video', class: 'icon-camera' },
+        'Firma digital': { icon: 'bi-pen',          class: 'icon-firma' },
         'Lector Optico': { icon: 'bi-qr-code-scan', class: 'icon-lector' },
-        'IMPRESORA': { icon: 'bi-printer', class: 'icon-impresora' },
-        'ESCANER': { icon: 'bi-upc-scan', class: 'icon-escaner' }
+        'IMPRESORA':     { icon: 'bi-printer',      class: 'icon-impresora' },
+        'ESCANER':       { icon: 'bi-upc-scan',     class: 'icon-escaner' }
     };
 
     function getIconoEquipo(tipo) {
         return iconosEquipo[tipo] || { icon: 'bi-gear', class: 'icon-cpu' };
     }
 
+    /* ─── RENDER TARJETA EQUIPO ─── */
     function renderEquipoCard(eq, indexEmpleado = -1, indexEquipo = -1) {
         const icono = getIconoEquipo(eq.tipo);
         const tipoEliminar = indexEmpleado >= 0 ? 'usuario' : 'oficina';
-
         return `
         <div class="equipo-card">
             <button class="btn-trash" onclick="prepararEliminarEquipo('${tipoEliminar}', ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
@@ -401,40 +471,22 @@
         </div>`;
     }
 
+    /* ─── ELIMINAR EQUIPO ─── */
     function prepararEliminarEquipo(tipo, indexEmpleado, indexEquipo, serial) {
         eliminarData = { tipo, indexEmpleado, indexEquipo, serial, nombre: '' };
         document.getElementById('modalSerial').textContent = serial;
         new bootstrap.Modal(document.getElementById('modalEliminarEquipo')).show();
     }
 
-    function prepararEliminarEmpleado(index, nombre) {
-        eliminarData = { tipo: 'empleado', indexEmpleado: index, indexEquipo: -1, serial: '', nombre };
-        document.getElementById('modalNombreEmpleado').textContent = nombre;
-        new bootstrap.Modal(document.getElementById('modalEliminarEmpleado')).show();
-    }
-
     async function confirmarEliminarEquipo() {
         const { tipo, indexEmpleado, indexEquipo } = eliminarData;
-
         try {
-            let url, body;
-
-            if (tipo === 'usuario') {
-                url = '/oficinas/eliminar-equipo-usuario';
-                body = `indexEmpleado=${indexEmpleado}&indexEquipo=${indexEquipo}`;
-            } else {
-                url = '/oficinas/eliminar-equipo-oficina';
-                body = `indexEquipo=${indexEquipo}`;
-            }
-
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: body
-            });
-
+            const url  = tipo === 'usuario' ? '/oficinas/eliminar-equipo-usuario' : '/oficinas/eliminar-equipo-oficina';
+            const body = tipo === 'usuario'
+                ? `indexEmpleado=${indexEmpleado}&indexEquipo=${indexEquipo}`
+                : `indexEquipo=${indexEquipo}`;
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body });
             if (!res.ok) throw new Error('Error al eliminar');
-
             if (tipo === 'usuario') {
                 empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
                 actualizarEquiposEmpleado(indexEmpleado);
@@ -442,9 +494,7 @@
                 equiposOficina.splice(indexEquipo, 1);
                 renderOficina();
             }
-
             bootstrap.Modal.getInstance(document.getElementById('modalEliminarEquipo')).hide();
-
         } catch(err) {
             console.error('Error:', err);
             alert('Error al eliminar el equipo');
@@ -452,28 +502,26 @@
         }
     }
 
+    /* ─── ELIMINAR EMPLEADO ─── */
+    function prepararEliminarEmpleado(index, nombre) {
+        eliminarData = { tipo: 'empleado', indexEmpleado: index, indexEquipo: -1, serial: '', nombre };
+        document.getElementById('modalNombreEmpleado').textContent = nombre;
+        new bootstrap.Modal(document.getElementById('modalEliminarEmpleado')).show();
+    }
+
     async function confirmarEliminarEmpleado() {
         const { indexEmpleado } = eliminarData;
-
         try {
             const res = await fetch('/oficinas/eliminar-empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `indexEmpleado=${indexEmpleado}`
             });
-
             const data = await res.json();
-
-            if (data.error) {
-                alert(data.error);
-                return;
-            }
-
+            if (data.error) { alert(data.error); return; }
             empleados.splice(indexEmpleado, 1);
             renderEmpleados();
-
             bootstrap.Modal.getInstance(document.getElementById('modalEliminarEmpleado')).hide();
-
         } catch(err) {
             console.error('Error:', err);
             alert('Error al eliminar el empleado');
@@ -481,16 +529,125 @@
         }
     }
 
+    /* ─── COMENTARIO MODAL ─── */
+    function abrirModalComentario(index) {
+        comentarioIndexActivo = index;
+        const emp = empleados[index];
+        document.getElementById('modalComentarioNombre').textContent = emp.nombre;
+
+        // Mostrar comentario previo si existe
+        const previo = emp.comentario || '';
+        const previoDiv   = document.getElementById('modalComentarioPrevio');
+        const previoTexto = document.getElementById('modalComentarioPrevioTexto');
+        if (previo) {
+            previoTexto.textContent = previo;
+            previoDiv.style.display = 'block';
+        } else {
+            previoDiv.style.display = 'none';
+        }
+
+        // Mostrar/ocultar botón borrar según si hay comentario previo
+        document.getElementById('btnBorrarComentario').style.display = previo ? 'inline-block' : 'none';
+
+        // Limpiar el textarea para el nuevo comentario
+        document.getElementById('modalComentarioTexto').value = '';
+
+        new bootstrap.Modal(document.getElementById('modalComentarioEmpleado')).show();
+        document.getElementById('modalComentarioEmpleado').addEventListener('shown.bs.modal', () => {
+            document.getElementById('modalComentarioTexto').focus();
+        }, { once: true });
+    }
+
+    async function guardarComentarioModal() {
+        const index = comentarioIndexActivo;
+        if (index < 0) return;
+        const nuevo = document.getElementById('modalComentarioTexto').value.trim();
+        if (!nuevo) {
+            // Si no escribió nada, solo cerrar
+            bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
+            return;
+        }
+
+        // Acumular: si ya hay comentario previo, agregar separado por nueva línea
+        const previo = empleados[index].comentario || '';
+        const comentarioFinal = previo ? previo + '\n' + nuevo : nuevo;
+
+        try {
+            const res = await fetch('/oficinas/comentario-empleado', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `indexEmpleado=${index}&comentario=${encodeURIComponent(comentarioFinal)}`
+            });
+            if (!res.ok) throw new Error('Error al guardar comentario');
+            empleados[index].comentario = comentarioFinal;
+            actualizarTooltipYIcono(index);
+            bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al guardar el comentario');
+        }
+    }
+
+    async function borrarComentarioModal() {
+        const index = comentarioIndexActivo;
+        if (index < 0) return;
+        try {
+            const res = await fetch('/oficinas/comentario-empleado', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `indexEmpleado=${index}&comentario=`
+            });
+            if (!res.ok) throw new Error('Error al borrar comentario');
+            empleados[index].comentario = '';
+            actualizarTooltipYIcono(index);
+            bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al borrar el comentario');
+        }
+    }
+
+    /* Actualiza el ícono en el header y el tooltip sin re-renderizar todo */
+    function actualizarTooltipYIcono(index) {
+        const item     = document.querySelector(`#emp-${index}`).closest('.accordion-item');
+        const btn      = item.querySelector('.accordion-button');
+        const comentario = empleados[index].comentario || '';
+        const texto    = comentario.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+        // ícono en el header
+        let ic = btn.querySelector('.icono-comentario-guardado');
+        if (comentario && !ic) {
+            ic = document.createElement('i');
+            ic.className = 'bi bi-chat-left-text-fill ms-2 icono-comentario-guardado';
+            ic.style.cssText = 'color:#f97316;font-size:0.85rem;pointer-events:none;';
+            btn.appendChild(ic);
+        } else if (!comentario && ic) {
+            ic.remove();
+        }
+
+        // tooltip + clase tiene-comentario
+        let tooltip = item.querySelector('.comentario-tooltip');
+        if (comentario) {
+            item.classList.add('tiene-comentario');
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'comentario-tooltip';
+                item.insertBefore(tooltip, item.firstChild);
+            }
+            tooltip.innerHTML = `<i class="bi bi-chat-left-text-fill me-1" style="color:#f97316;"></i>${texto}`;
+        } else {
+            item.classList.remove('tiene-comentario');
+            if (tooltip) tooltip.remove();
+        }
+    }
+
+    /* ─── TOGGLES ─── */
     function toggleNombreOficina() {
         const tipo = document.getElementById('tipoOficina').value;
         const container = document.getElementById('nombreOficinaContainer');
         const input = document.getElementById('nombreOficina');
-        if(tipo==='IMPRESORA'){
-            container.style.display='block';
-        } else {
-            container.style.display='none';
-            input.value='';
-        }
+        container.style.display = tipo === 'IMPRESORA' ? 'block' : 'none';
+        if (tipo !== 'IMPRESORA') input.value = '';
     }
 
     function toggleNombreUsuario(select) {
@@ -498,26 +655,19 @@
         const tipo = select.value;
         const container = form.querySelector('.nombre-usuario-container');
         const input = form.querySelector('.nombre-usuario-input');
-        if(tipo==='CPU'){
-            container.style.display='block';
-        } else {
-            container.style.display='none';
-            input.value='';
-        }
+        container.style.display = tipo === 'CPU' ? 'block' : 'none';
+        if (tipo !== 'CPU') input.value = '';
     }
 
+    /* ─── CARGAR DATOS ─── */
     async function cargarDatos() {
         try {
-            // Agregar timestamp para evitar cache
             const timestamp = new Date().getTime();
             const res = await fetch('/api/oficinas/data?t=' + timestamp, {
                 cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
+                headers: { 'Cache-Control': 'no-cache' }
             });
-
-            if(!res.ok) throw new Error('Error backend');
+            if (!res.ok) throw new Error('Error backend');
             const data = await res.json();
             empleados = data.empleados || [];
             equiposOficina = data.equiposOficina || [];
@@ -525,42 +675,72 @@
             renderOficina();
         } catch(e) {
             console.error('Error al cargar datos:', e);
-            // Reintentar después de 500ms
             setTimeout(cargarDatos, 500);
         }
     }
 
+    /* ─── RENDER EMPLEADOS ─── */
     function renderEmpleados() {
         const acc = document.getElementById('accordionEmpleados');
-        acc.innerHTML='';
+        acc.innerHTML = '';
 
-        empleados.forEach((emp,i)=>{
+        // Cartel vacío
+        if (empleados.length === 0) {
+            acc.innerHTML = `
+            <div class="sin-empleados-estado">
+                <i class="bi bi-people icono-grande"></i>
+                <div class="titulo">Sin empleados cargados</div>
+                <div class="subtitulo">Usá el campo de arriba para agregar empleados al relevamiento</div>
+                <div class="flecha"><i class="bi bi-arrow-up-circle-fill"></i> Agregar empleado</div>
+            </div>`;
+            return;
+        }
+
+        empleados.forEach((emp, i) => {
             const equipos = emp.equipos || [];
-            const tieneEquipos = equipos.length > 0;
-            const badgeClass = tieneEquipos ? 'badge-con-equipos' : 'badge-sin-equipos';
-            const badgeText = equipos.length === 1 ? 'equipo' : 'equipos';
+            const badgeClass = equipos.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos';
+            const badgeText  = equipos.length === 1 ? 'equipo' : 'equipos';
+            const comentario = emp.comentario || '';
+            const textoEscapado = comentario.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-            let equiposHtml = equipos.length===0 ?
-                `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipos asignados</div></div>` :
-                `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, i, idx)).join('')}</div>`;
+            const equiposHtml = equipos.length === 0
+                ? `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipos asignados</span></div>`
+                : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, i, idx)).join('')}</div>`;
 
-            acc.innerHTML+=`
-            <div class="accordion-item">
-                <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
-                <button class="btn-eliminar-empleado" onclick="prepararEliminarEmpleado(${i}, '${emp.nombre.replace(/'/g, "\\'")}')">
-                    <i class="bi bi-trash3"></i>
-                </button>
+            acc.innerHTML += `
+            <div class="accordion-item${comentario ? ' tiene-comentario' : ''}">
+
+                ${comentario ? `
+                <div class="comentario-tooltip">
+                    <i class="bi bi-chat-left-text-fill me-1" style="color:#f97316;"></i>${textoEscapado}
+                </div>` : ''}
+
+                <div class="header-right">
+                    <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
+                    <button class="btn-accion-empleado btn-comentar-empleado"
+                            title="Comentario"
+                            onclick="abrirModalComentario(${i})">
+                        <i class="bi bi-chat-left-text"></i>
+                    </button>
+                    <button class="btn-accion-empleado btn-eliminar-empleado"
+                            title="Eliminar empleado"
+                            onclick="prepararEliminarEmpleado(${i}, '${emp.nombre.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+
                 <h2 class="accordion-header">
                     <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#emp-${i}">
-                        <i class="bi bi-person"></i> <span style="margin-left:0.5rem;">${emp.nombre}</span>
-                        ${emp.cargo?`<span class="text-secondary" style="font-size:0.875rem;margin-left:0.5rem;">(${emp.cargo})</span>`:''}
+                        <i class="bi bi-person"></i>
+                        <span style="margin-left:0.5rem;">${emp.nombre}</span>
+                        ${emp.cargo ? `<span class="text-secondary" style="font-size:0.875rem;margin-left:0.5rem;">(${emp.cargo})</span>` : ''}
+                        ${comentario ? `<i class="bi bi-chat-left-text-fill ms-2 icono-comentario-guardado" style="color:#f97316;font-size:0.85rem;pointer-events:none;"></i>` : ''}
                     </button>
                 </h2>
+
                 <div id="emp-${i}" class="accordion-collapse collapse">
                     <div class="accordion-body">
-                        <div class="equipos-container">
-                            ${equiposHtml}
-                        </div>
+                        <div class="equipos-container">${equiposHtml}</div>
                         <hr>
                         <form onsubmit="agregarEquipoUsuario(event, ${i})" class="row g-2 align-items-end">
                             <div class="col-md-3">
@@ -592,39 +772,31 @@
     function actualizarEquiposEmpleado(index) {
         const equipos = empleados[index].equipos || [];
         const container = document.querySelector(`#emp-${index} .equipos-container`);
-
         if (!container) return;
 
-        if (equipos.length === 0) {
-            container.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipos asignados</div></div>`;
-        } else {
-            container.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx)=>renderEquipoCard(eq, index, idx)).join('')}</div>`;
-        }
+        container.innerHTML = equipos.length === 0
+            ? `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipos asignados</span></div>`
+            : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, index, idx)).join('')}</div>`;
 
         const badge = document.querySelector(`#emp-${index}`).closest('.accordion-item').querySelector('.badge-contador');
-        const tieneEquipos = equipos.length > 0;
-        const badgeText = equipos.length === 1 ? 'equipo' : 'equipos';
-
-        badge.className = 'badge-contador ' + (tieneEquipos ? 'badge-con-equipos' : 'badge-sin-equipos');
-        badge.textContent = `${equipos.length} ${badgeText}`;
+        badge.className = 'badge-contador ' + (equipos.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos');
+        badge.textContent = `${equipos.length} ${equipos.length === 1 ? 'equipo' : 'equipos'}`;
     }
 
-    async function agregarEmpleado(e){
+    /* ─── AGREGAR EMPLEADO ─── */
+    async function agregarEmpleado(e) {
         e.preventDefault();
         const input = document.getElementById('nombreEmpleado');
         const nombre = input.value.trim();
-        if(!nombre) return;
-
+        if (!nombre) return;
         try {
             const res = await fetch('/oficinas/empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: 'nombre=' + encodeURIComponent(nombre)
             });
-
-            if(!res.ok) throw new Error('Error en la respuesta');
-
-            empleados.push({nombre: nombre, cargo: null, equipos: []});
+            if (!res.ok) throw new Error('Error en la respuesta');
+            empleados.push({ nombre, cargo: null, equipos: [], comentario: '' });
             renderEmpleados();
             input.value = '';
         } catch(err) {
@@ -633,89 +805,77 @@
         }
     }
 
-    async function agregarEquipoUsuario(e, index){
+    /* ─── AGREGAR EQUIPO USUARIO ─── */
+    async function agregarEquipoUsuario(e, index) {
         e.preventDefault();
         const form = e.target;
-        const selectTipo = form.querySelector('.equipo-tipo-select');
-        const tipo = selectTipo.value;
+        const tipo  = form.querySelector('.equipo-tipo-select').value;
         const serie = form.querySelector('.numero-serie-input').value;
         const nombre = form.querySelector('.nombre-usuario-input').value;
-        if(!serie) return;
-
+        if (!serie) return;
         try {
             let body = `indexEmpleado=${index}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}`;
-            if(nombre) body += `&nombre=${encodeURIComponent(nombre)}`;
-
+            if (nombre) body += `&nombre=${encodeURIComponent(nombre)}`;
             const res = await fetch('/oficinas/equipo-usuario', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: body
+                body
             });
-
-            if(!res.ok) throw new Error('Error');
-
-            empleados[index].equipos.push({tipo, numeroSerie: serie, nombre: nombre || null});
+            if (!res.ok) throw new Error('Error');
+            empleados[index].equipos.push({ tipo, numeroSerie: serie, nombre: nombre || null });
             actualizarEquiposEmpleado(index);
-
             form.querySelector('.numero-serie-input').value = '';
             form.querySelector('.nombre-usuario-input').value = '';
             form.querySelector('.numero-serie-input').focus();
-
         } catch(err) {
             console.error(err);
             alert('Error al agregar equipo');
         }
     }
 
-    async function agregarEquipoOficina(e){
+    /* ─── AGREGAR EQUIPO OFICINA ─── */
+    async function agregarEquipoOficina(e) {
         e.preventDefault();
-        const tipo = document.getElementById('tipoOficina').value;
-        const serie = document.getElementById('serieOficina').value;
+        const tipo   = document.getElementById('tipoOficina').value;
+        const serie  = document.getElementById('serieOficina').value;
         const nombre = document.getElementById('nombreOficina').value;
-        if(!serie) return;
-
+        if (!serie) return;
         try {
             const res = await fetch('/oficinas/equipo-oficina', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
                 body: `tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}`
             });
-
-            if(!res.ok) throw new Error('Error');
-
-            equiposOficina.push({tipo, numeroSerie: serie, nombre: nombre || null});
+            if (!res.ok) throw new Error('Error');
+            equiposOficina.push({ tipo, numeroSerie: serie, nombre: nombre || null });
             renderOficina();
-
             document.getElementById('serieOficina').value = '';
             document.getElementById('nombreOficina').value = '';
             document.getElementById('serieOficina').focus();
-
         } catch(err) {
             console.error(err);
             alert('Error al agregar equipo');
         }
     }
 
-    function renderOficina(){
+    /* ─── RENDER OFICINA ─── */
+    function renderOficina() {
         const div = document.getElementById('listaOficina');
         div.innerHTML = '';
-
-        if(equiposOficina.length === 0){
-            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><div>Sin equipamiento cargado</div></div>`;
+        if (equiposOficina.length === 0) {
+            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipamiento cargado</span></div>`;
             return;
         }
-
-        div.innerHTML = `<div class="equipos-grid">${equiposOficina.map((eq, idx)=>renderEquipoCard(eq, -1, idx)).join('')}</div>`;
+        div.innerHTML = `<div class="equipos-grid">${equiposOficina.map((eq, idx) => renderEquipoCard(eq, -1, idx)).join('')}</div>`;
     }
 
-    document.addEventListener('DOMContentLoaded', ()=>{
+    document.addEventListener('DOMContentLoaded', () => {
         toggleNombreOficina();
         cargarDatos();
     });
 
-    // ⭐ CARGAR DATOS CUANDO SE VUELVE CON LA FLECHA DEL NAVEGADOR
+    // Recargar al volver con la flecha del navegador
     window.addEventListener('pageshow', function(event) {
-        // Si la página se carga desde el cache (al volver con la flecha)
         if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
             cargarDatos();
         }

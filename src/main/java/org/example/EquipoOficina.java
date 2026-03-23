@@ -4,7 +4,7 @@ public class EquipoOficina {
 
     private String tipo;
     private String numeroSerie;
-    private String nombre; // opcional
+    private String nombre;
 
     public EquipoOficina(String tipo, String numeroSerie, String nombre) {
         this.tipo = tipo;

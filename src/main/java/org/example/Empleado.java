@@ -9,6 +9,7 @@ public class Empleado {
     private String nombre;
     private String cargo;
     private List<EquipoUsuario> equipos = new ArrayList<>();
+    private String comentario;
 
     public Empleado(String nombre, String cargo) {
         this.nombre = nombre.trim();
@@ -20,10 +21,8 @@ public class Empleado {
     }
 
     public Empleado() {
-        // Constructor vacío para crear empleados desde Excel
     }
 
-    // GETTERS
     public String getNombre() {
         return nombre;
     }
@@ -36,7 +35,10 @@ public class Empleado {
         return equipos;
     }
 
-    // SETTERS (necesarios para el ExportService)
+    public String getComentario() {
+        return comentario;
+    }
+
     public void setNombre(String nombre) {
         this.nombre = nombre != null ? nombre.trim() : null;
     }
@@ -45,8 +47,11 @@ public class Empleado {
         this.cargo = cargo;
     }
 
+    public void setComentario(String comentario) {
+        this.comentario = comentario;
+    }
+
     public void agregarEquipo(EquipoUsuario eq) {
         equipos.add(eq);
     }
 }
-

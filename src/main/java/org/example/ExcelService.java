@@ -11,7 +11,6 @@ import java.util.List;
 @Service
 public class ExcelService {
 
-    // ===================== BIENES (NO TOCAR) =====================
     public static List<String> leerSeriales(MultipartFile archivo) {
         List<String> seriales = new ArrayList<>();
 
@@ -47,7 +46,7 @@ public class ExcelService {
         return seriales;
     }
 
-    // ===================== OFICINAS (ROBUSTO) =====================
+
     public static List<Empleado> leerEmpleadosDesdeExcel(MultipartFile archivo) {
 
         List<Empleado> empleados = new ArrayList<>();
@@ -59,7 +58,7 @@ public class ExcelService {
 
             DataFormatter formatter = new DataFormatter();
 
-            // arrancamos en 1 para saltar encabezado
+
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 
                 Row row = sheet.getRow(i);
