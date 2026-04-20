@@ -14,9 +14,6 @@ import java.util.*;
 @Controller
 public class HomeController {
 
-    // ========================================================================
-    // INICIO
-    // ========================================================================
     @GetMapping("/")
     public String inicio(HttpSession session) {
         session.removeAttribute("relevamientoBienes");
@@ -27,9 +24,7 @@ public class HomeController {
         return "index";
     }
 
-    // ========================================================================
-    // INICIAR RELEVAMIENTO
-    // ========================================================================
+
     @PostMapping("/iniciar-relevamiento")
     public String iniciarRelevamiento(
             @RequestParam("nombreRelevamiento") String nombre,
@@ -41,7 +36,7 @@ public class HomeController {
     ) {
         session.setAttribute("nombreRelevamiento", nombre);
 
-        // ===================== OFICINAS =====================
+
         if ("OFICINAS".equals(tipo)) {
             List<Empleado> empleados = new ArrayList<>();
 
@@ -58,7 +53,7 @@ public class HomeController {
             return "redirect:/oficinas/relevamiento";
         }
 
-        // ===================== BIENES =====================
+
         if (archivo == null || archivo.isEmpty()) {
             return "redirect:/";
         }
@@ -74,9 +69,7 @@ public class HomeController {
         return "redirect:/relevamiento";
     }
 
-    // ========================================================================
-    // RELEVAMIENTO BIENES
-    // ========================================================================
+
     @GetMapping("/relevamiento")
     public String mostrarRelevamiento(Model model, HttpSession session) {
         Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
@@ -176,9 +169,7 @@ public class HomeController {
         return "finalizado";
     }
 
-    // ========================================================================
-    // EXPORTACIÓN BIENES
-    // ========================================================================
+
     @GetMapping("/exportar-excel")
     public ResponseEntity<byte[]> exportarExcelBienes(HttpSession session) {
         try {
@@ -207,9 +198,7 @@ public class HomeController {
         }
     }
 
-    // ========================================================================
-    // EXPORTACIÓN OFICINAS
-    // ========================================================================
+
     @GetMapping("/oficinas/exportar/excel")
     public ResponseEntity<byte[]> exportarExcelOficinas(HttpSession session) {
         try {
@@ -233,9 +222,7 @@ public class HomeController {
         }
     }
 
-    // ========================================================================
-    // API JSON - BIENES (el de oficinas vive en OficinaController)
-    // ========================================================================
+
     @GetMapping("/api/bienes/data")
     @ResponseBody
     public Map<String, Object> obtenerDatosBienes(HttpSession session) {
@@ -252,9 +239,7 @@ public class HomeController {
         }
         return response;
     }
-    // ========================================================================
-    // API JSON - OFICINAS
-    // ========================================================================
+
     @GetMapping("/api/oficinas/data")
     @ResponseBody
     public Map<String, Object> obtenerDatosOficina(HttpSession session) {

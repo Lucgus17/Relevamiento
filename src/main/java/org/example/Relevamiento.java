@@ -8,33 +8,28 @@ public class Relevamiento {
     private List<String> numeroSerialEncontrado = new ArrayList<>();
     private List<String> numeroSerialSobrante = new ArrayList<>();
 
-    // =====================================================================
-    // CARGAR SERIALES DESDE EXCEL
-    // =====================================================================
+
     public void cargarSeriales(List<String> seriales) {
         this.numeroSerialEsperado.clear();
         this.numeroSerialEsperado.addAll(seriales);
     }
 
-    // =====================================================================
-    // PROCESAR INPUT CON SUGERENCIA (MEJORADO CON MODAL)
-    // =====================================================================
     public String procesarInputConSugerencia(String serialIngresado) {
         String serialNormalizado = serialIngresado.trim().toUpperCase();
 
-        // 1. Verificar coincidencia exacta (sin basura)
+
         for (String esperado : numeroSerialEsperado) {
             if (esperado.trim().equalsIgnoreCase(serialNormalizado)) {
                 marcarComoEncontrado(esperado);
-                return null; // Match exacto, sin modal
+                return null;
             }
         }
 
-        // 2. ⭐ Buscar si algún serial esperado está CONTENIDO en el texto ingresado
+
         for (String esperado : numeroSerialEsperado) {
             String esperadoNormalizado = esperado.trim().toUpperCase();
             if (serialNormalizado.contains(esperadoNormalizado)) {
-                // ✅ ENCONTRADO DENTRO DEL TEXTO → DEVOLVER SUGERENCIA PARA MOSTRAR MODAL
+
                 return esperado;
             }
         }
@@ -51,9 +46,7 @@ public class Relevamiento {
         }
     }
 
-    // =====================================================================
-    // BUSCAR SUGERENCIA CON LEVENSHTEIN
-    // =====================================================================
+
     private String buscarSugerencia(String serialIngresado) {
         int umbral = 3;
         String mejorMatch = null;
@@ -74,9 +67,7 @@ public class Relevamiento {
         return mejorMatch;
     }
 
-    // =====================================================================
-    // ALGORITMO DE LEVENSHTEIN
-    // =====================================================================
+
     private int calcularLevenshtein(String s1, String s2) {
         int[][] dp = new int[s1.length() + 1][s2.length() + 1];
 
@@ -100,9 +91,6 @@ public class Relevamiento {
         return dp[s1.length()][s2.length()];
     }
 
-    // =====================================================================
-    // MARCAR COMO ENCONTRADO (⭐ AGREGAR AL PRINCIPIO)
-    // =====================================================================
     public void marcarComoEncontrado(String serial) {
         String serialNormalizado = serial.trim();
 
@@ -112,14 +100,12 @@ public class Relevamiento {
                 .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
 
         if (!yaExiste) {
-            // ⭐ AGREGAR AL PRINCIPIO EN LUGAR DE AL FINAL
+
             numeroSerialEncontrado.add(0, serialNormalizado);
         }
     }
 
-    // =====================================================================
-    // AGREGAR SOBRANTE (⭐ AGREGAR AL PRINCIPIO)
-    // =====================================================================
+
     public void agregarSobrante(String serial) {
         String serialNormalizado = serial.trim();
 
@@ -132,9 +118,7 @@ public class Relevamiento {
         }
     }
 
-    // =====================================================================
-    // ELIMINAR
-    // =====================================================================
+
     public void eliminar(String serial) {
         String serialNormalizado = serial.trim();
 
@@ -157,9 +141,6 @@ public class Relevamiento {
         );
     }
 
-    // =====================================================================
-    // CONTAR NÚMEROS DE SERIE
-    // =====================================================================
     public Map<String, Integer> contarNumerosSeriales() {
         Map<String, Integer> conteos = new HashMap<>();
         conteos.put("esperados", numeroSerialEsperado.size());
@@ -168,9 +149,7 @@ public class Relevamiento {
         return conteos;
     }
 
-    // =====================================================================
-    // GETTERS
-    // =====================================================================
+
     public List<String> getNumeroSerialEsperado() {
         return numeroSerialEsperado;
     }

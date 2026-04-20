@@ -9,12 +9,12 @@ public class RelevamientoOficina {
     private final List<Empleado> empleados = new ArrayList<>();
     private final List<EquipoOficina> equiposOficina = new ArrayList<>();
 
-    // ✅ CONSTRUCTOR
+
     public RelevamientoOficina(String nombre) {
         this.nombre = nombre;
     }
 
-    // ✅ INICIAR / REINICIAR RELEVAMIENTO
+
     public void iniciar(String nombre, List<Empleado> empleadosIniciales) {
         this.nombre = nombre;
         empleados.clear();
@@ -36,7 +36,7 @@ public class RelevamientoOficina {
         return equiposOficina;
     }
 
-    // ===== Conteos Totales =====
+
 
     public int getTotalCPUs() {
         return (int) empleados.stream()

@@ -12,7 +12,7 @@ import java.util.*;
 @RequestMapping("/oficinas")
 public class OficinaController {
 
-    // ================= UTIL =================
+
     private RelevamientoOficina obtenerRelevamiento(HttpSession session) {
         RelevamientoOficina rel =
                 (RelevamientoOficina) session.getAttribute("relevamientoOficina");
@@ -28,7 +28,7 @@ public class OficinaController {
         return rel;
     }
 
-    // ================= API ENDPOINT PARA CARGAR DATOS =================
+
     @GetMapping("/data")
     @ResponseBody
     public Map<String, Object> obtenerDatos(HttpSession session) {
@@ -41,7 +41,7 @@ public class OficinaController {
         return response;
     }
 
-    // ================= MOSTRAR =================
+
     @GetMapping("/relevamiento")
     public String mostrarRelevamiento(HttpSession session, Model model) {
         RelevamientoOficina rel = obtenerRelevamiento(session);
@@ -53,7 +53,7 @@ public class OficinaController {
         return "relevamiento-oficinas";
     }
 
-    // ================= CARGAR EXCEL =================
+
     @PostMapping("/cargar-excel")
     public String cargarExcel(
             @RequestParam MultipartFile archivo,
@@ -66,7 +66,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= CARGAR SIN EXCEL (oficina vacía) =================
+
     @PostMapping("/cargar-sin-excel")
     public String cargarSinExcel(
             @RequestParam String nombreRelevamiento,
@@ -77,7 +77,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= AGREGAR EMPLEADO =================
+
     @PostMapping("/empleado")
     public String agregarEmpleado(
             @RequestParam String nombre,
@@ -91,7 +91,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= ELIMINAR EMPLEADO =================
+
     @PostMapping("/eliminar-empleado")
     @ResponseBody
     public Map<String, String> eliminarEmpleado(
@@ -110,7 +110,7 @@ public class OficinaController {
         return response;
     }
 
-    // ================= COMENTARIO EMPLEADO =================
+
     @PostMapping("/comentario-empleado")
     @ResponseBody
     public Map<String, Object> guardarComentario(
@@ -130,7 +130,7 @@ public class OficinaController {
         return response;
     }
 
-    // ================= EQUIPO USUARIO =================
+
     @PostMapping("/equipo-usuario")
     public String agregarEquipoUsuario(
             @RequestParam int indexEmpleado,
@@ -152,7 +152,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= EQUIPO OFICINA =================
+
     @PostMapping("/equipo-oficina")
     public String agregarEquipoOficina(
             @RequestParam String tipo,
@@ -168,7 +168,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= ELIMINAR EQUIPO USUARIO =================
+
     @PostMapping("/eliminar-equipo-usuario")
     public String eliminarEquipoUsuario(
             @RequestParam int indexEmpleado,
@@ -188,7 +188,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= ELIMINAR EQUIPO OFICINA =================
+
     @PostMapping("/eliminar-equipo-oficina")
     public String eliminarEquipoOficina(
             @RequestParam int indexEquipo,
@@ -203,7 +203,7 @@ public class OficinaController {
         return "redirect:/oficinas/relevamiento";
     }
 
-    // ================= FINALIZADO =================
+
     @GetMapping("/finalizado")
     public String finalizado(HttpSession session, Model model) {
         RelevamientoOficina rel =
