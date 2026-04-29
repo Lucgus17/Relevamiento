@@ -1,6 +1,7 @@
 package org.example;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,9 @@ import java.util.*;
 @Controller
 public class HomeController {
 
+    @Autowired private HistorialService historialService;
+    @Autowired private MailService mailService;
+
     @GetMapping("/")
     public String inicio(HttpSession session) {
         session.removeAttribute("relevamientoBienes");
@@ -21,9 +25,11 @@ public class HomeController {
         session.removeAttribute("nombreRelevamiento");
         session.removeAttribute("ultimoSerial");
         session.removeAttribute("relevamientoActivo");
+        session.removeAttribute("yaGuardado");
+        session.removeAttribute("historialBienesId");
+        session.removeAttribute("historialOficinaId");
         return "index";
     }
-
 
     @PostMapping("/iniciar-relevamiento")
     public String iniciarRelevamiento(
@@ -36,27 +42,24 @@ public class HomeController {
     ) {
         session.setAttribute("nombreRelevamiento", nombre);
 
-
         if ("OFICINAS".equals(tipo)) {
             List<Empleado> empleados = new ArrayList<>();
-
-            if ("CON_EXCEL".equals(modoOficinas)
-                    && archivo != null
-                    && !archivo.isEmpty()) {
+            if ("CON_EXCEL".equals(modoOficinas) && archivo != null && !archivo.isEmpty()) {
                 empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
             }
-
             RelevamientoOficina rel = new RelevamientoOficina(nombre);
             rel.iniciar(nombre, empleados);
             session.setAttribute("relevamientoOficina", rel);
 
+            if (session.getAttribute("historialOficinaId") == null) {
+                Long id = historialService.crearOficina(rel);
+                session.setAttribute("historialOficinaId", id);
+            }
+
             return "redirect:/oficinas/relevamiento";
         }
 
-
-        if (archivo == null || archivo.isEmpty()) {
-            return "redirect:/";
-        }
+        if (archivo == null || archivo.isEmpty()) return "redirect:/";
 
         List<String> seriales = ExcelService.leerSeriales(archivo);
         Relevamiento relevamiento = new Relevamiento();
@@ -66,9 +69,13 @@ public class HomeController {
         session.setAttribute("relevamientoActivo", true);
         session.setAttribute("ultimoSerial", null);
 
+        if (session.getAttribute("historialBienesId") == null) {
+            Long id = historialService.crearBienes(nombre, relevamiento);
+            session.setAttribute("historialBienesId", id);
+        }
+
         return "redirect:/relevamiento";
     }
-
 
     @GetMapping("/relevamiento")
     public String mostrarRelevamiento(Model model, HttpSession session) {
@@ -105,10 +112,12 @@ public class HomeController {
         if ("encontrado".equals(accion)) {
             relevamiento.marcarComoEncontrado(serial);
             session.setAttribute("ultimoSerial", serial);
+            autoguardarBienes(session, relevamiento);
             response.put("serialProcesado", serial);
             return response;
         } else if ("noInventariado".equals(accion)) {
             relevamiento.agregarSobrante(serial);
+            autoguardarBienes(session, relevamiento);
             response.put("serialProcesado", serial);
         } else {
             boolean yaEncontrado = relevamiento.getNumeroSerialEncontrado().stream()
@@ -128,6 +137,7 @@ public class HomeController {
                 response.put("sugerencia", sugerencia);
                 response.put("serialOriginal", serial);
             } else {
+                autoguardarBienes(session, relevamiento);
                 response.put("serialProcesado", serial);
             }
         }
@@ -150,6 +160,7 @@ public class HomeController {
             return response;
         }
         relevamiento.eliminar(serial);
+        autoguardarBienes(session, relevamiento);
         response.put("success", "true");
         return response;
     }
@@ -161,6 +172,8 @@ public class HomeController {
 
         if (relevamiento == null) return "redirect:/";
 
+        autoguardarBienes(session, relevamiento);
+
         model.addAttribute("nombreRelevamiento", nombre);
         model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
         model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
@@ -168,7 +181,6 @@ public class HomeController {
 
         return "finalizado";
     }
-
 
     @GetMapping("/exportar-excel")
     public ResponseEntity<byte[]> exportarExcelBienes(HttpSession session) {
@@ -198,13 +210,10 @@ public class HomeController {
         }
     }
 
-
     @GetMapping("/oficinas/exportar/excel")
     public ResponseEntity<byte[]> exportarExcelOficinas(HttpSession session) {
         try {
-            RelevamientoOficina rel =
-                    (RelevamientoOficina) session.getAttribute("relevamientoOficina");
-
+            RelevamientoOficina rel = (RelevamientoOficina) session.getAttribute("relevamientoOficina");
             if (rel == null) return ResponseEntity.status(404).build();
 
             byte[] excel = ExportService.generarExcelOficinas(rel);
@@ -221,7 +230,6 @@ public class HomeController {
             return ResponseEntity.status(500).build();
         }
     }
-
 
     @GetMapping("/api/bienes/data")
     @ResponseBody
@@ -243,8 +251,7 @@ public class HomeController {
     @GetMapping("/api/oficinas/data")
     @ResponseBody
     public Map<String, Object> obtenerDatosOficina(HttpSession session) {
-        RelevamientoOficina rel =
-                (RelevamientoOficina) session.getAttribute("relevamientoOficina");
+        RelevamientoOficina rel = (RelevamientoOficina) session.getAttribute("relevamientoOficina");
 
         Map<String, Object> response = new HashMap<>();
         if (rel != null) {
@@ -257,4 +264,62 @@ public class HomeController {
         return response;
     }
 
+    @PostMapping("/enviar-excel-bienes")
+    @ResponseBody
+    public Map<String, String> enviarExcelBienes(
+            @RequestParam String prefijo,
+            HttpSession session
+    ) {
+        Map<String, String> res = new HashMap<>();
+        try {
+            String nombre = (String) session.getAttribute("nombreRelevamiento");
+            Relevamiento rel = (Relevamiento) session.getAttribute("relevamientoBienes");
+            if (rel == null || nombre == null) {
+                res.put("error", "No hay relevamiento activo");
+                return res;
+            }
+
+            byte[] excel = ExportService.generarExcel(
+                    nombre,
+                    rel.getNumeroSerialEsperado(),
+                    rel.getNumeroSerialEncontrado(),
+                    rel.getNumeroSerialSobrante()
+            );
+            if (excel == null) {
+                res.put("error", "Error al generar el Excel");
+                return res;
+            }
+
+            String destinatario = prefijo.trim() + "@justiciacordoba.gob.ar";
+            String nombreArchivo = ExportService.generarNombreArchivo(nombre, "xlsx");
+            mailService.enviarExcel(destinatario, nombre, excel, nombreArchivo);
+
+            res.put("ok", "true");
+            res.put("destinatario", destinatario);
+
+        } catch (Exception e) {
+            Throwable causa = e;
+            while (causa != null) {
+                if (causa instanceof java.net.UnknownHostException
+                        || causa instanceof java.net.ConnectException
+                        || causa.getClass().getName().contains("MailConnectException")) {
+                    res.put("error", "SIN_INTERNET");
+                    return res;
+                }
+                causa = causa.getCause();
+            }
+            res.put("error", "No se pudo enviar: " + e.getMessage());
+        }
+        return res;
+    }
+
+    // ── helpers ──────────────────────────────────────────────
+
+    private void autoguardarBienes(HttpSession session, Relevamiento rel) {
+        Long id = (Long) session.getAttribute("historialBienesId");
+        String nombre = (String) session.getAttribute("nombreRelevamiento");
+        if (id != null) {
+            historialService.actualizarBienes(id, nombre, rel);
+        }
+    }
 }

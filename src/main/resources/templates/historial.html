@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Relevamientos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0f1117; color: #e5e7eb; font-family: system-ui, -apple-system, sans-serif; }
+
+        h2 {
+            color: #22c55e;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.9rem;
+        }
+
+        .label-bienes   { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .label-oficinas { background: rgba(34,197,94,0.12);  color: #4ade80; }
+
+        .card-table {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        table { border-collapse: collapse; width: 100%; }
+
+        thead th {
+            background: #1a2030;
+            color: #6b7280;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #2d3748;
+            font-weight: 600;
+        }
+
+        tbody td {
+            background: #111827;
+            border-bottom: 1px solid #1a2030;
+            padding: 0.7rem 1rem;
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: #141d2b; }
+
+        .nombre-cell { font-weight: 600; color: #e5e7eb; }
+        .fecha-cell  { color: #6b7280; font-size: 0.8rem; white-space: nowrap; }
+
+        .stats-pill {
+            background: #1a2030;
+            border: 1px solid #2d3748;
+            border-radius: 20px;
+            padding: 0.2rem 0.75rem;
+            font-size: 0.78rem;
+            color: #6b7280;
+            white-space: nowrap;
+            display: inline-block;
+        }
+        .stats-pill .v-esp { color: #60a5fa; font-weight: 700; }
+        .stats-pill .v-enc { color: #4ade80; font-weight: 700; }
+        .stats-pill .v-sob { color: #f87171; font-weight: 700; }
+        .stats-pill .v-emp { color: #4ade80; font-weight: 700; }
+        .stats-pill .v-ofi { color: #f97316; font-weight: 700; }
+
+        .btn-dl {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(34,197,94,0.08);
+            border: 1px solid rgba(34,197,94,0.25);
+            color: #4ade80;
+            border-radius: 6px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-dl:hover { background: rgba(34,197,94,0.18); color: #4ade80; }
+
+        .btn-retomar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: #60a5fa;
+            border-radius: 6px;
+            padding: 0.3rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-retomar:hover { background: rgba(59,130,246,0.18); color: #60a5fa; }
+
+        .empty-state {
+            background: #111827;
+            border: 2px dashed #1f2937;
+            border-radius: 10px;
+            padding: 2.5rem;
+            text-align: center;
+            color: #374151;
+        }
+        .empty-state i { font-size: 2.2rem; display: block; margin-bottom: 0.5rem; }
+
+        .btn-back {
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #e5e7eb;
+            border-radius: 8px;
+            padding: 0.4rem 1rem;
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: background 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-back:hover { background: #2d3748; color: #e5e7eb; }
+
+        .acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+<div class="container mt-4 mb-5" style="max-width: 1050px;">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2><i class="bi bi-clock-history me-2"></i>Historial</h2>
+        <a href="/" class="btn-back"><i class="bi bi-house"></i> Inicio</a>
+    </div>
+
+    <!-- BIENES -->
+    <div class="mb-5">
+        <div class="section-label label-bienes">
+            <i class="bi bi-upc-scan"></i> Relevamientos de Bienes
+        </div>
+        <div th:if="${#lists.isEmpty(bienes)}" class="empty-state">
+            <i class="bi bi-inbox"></i>Sin relevamientos de bienes registrados
+        </div>
+        <div th:unless="${#lists.isEmpty(bienes)}" class="card-table">
+            <table>
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Estadísticas</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${bienes}">
+                    <td class="nombre-cell" th:text="${r.nombre}"></td>
+                    <td class="fecha-cell"  th:text="${r.fechaFormateada}"></td>
+                    <td>
+                        <span class="stats-pill">
+                            <span class="v-esp" th:text="${#lists.size(r.esperados)}"></span> Esperados ·
+                            <span class="v-enc" th:text="${#lists.size(r.encontrados)}"></span> Encontrados ·
+                            <span class="v-sob" th:text="${#lists.size(r.sobrantes)}"></span> Sobrantes
+                        </span>
+                    </td>
+                    <td>
+                        <div class="acciones">
+                            <a th:href="@{/historial/bienes/{id}/retomar(id=${r.id})}" class="btn-retomar">
+                                <i class="bi bi-play-circle"></i> Retomar
+                            </a>
+                            <a th:href="@{/historial/bienes/{id}/excel(id=${r.id})}" class="btn-dl">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- OFICINAS -->
+    <div>
+        <div class="section-label label-oficinas">
+            <i class="bi bi-building"></i> Relevamientos de Oficinas
+        </div>
+        <div th:if="${#lists.isEmpty(oficinas)}" class="empty-state">
+            <i class="bi bi-inbox"></i>Sin relevamientos de oficinas registrados
+        </div>
+        <div th:unless="${#lists.isEmpty(oficinas)}" class="card-table">
+            <table>
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Fecha</th>
+                    <th>Estadísticas</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${oficinas}">
+                    <td class="nombre-cell" th:text="${r.nombre}"></td>
+                    <td class="fecha-cell"  th:text="${r.fechaFormateada}"></td>
+                    <td>
+                        <span class="stats-pill">
+                            <span class="v-emp" th:text="${#lists.size(r.empleados)}"></span> Empleados ·
+                            <span class="v-ofi" th:text="${#lists.size(r.equiposOficina)}"></span> Eq. Oficinas
+                        </span>
+                    </td>
+                    <td>
+                        <div class="acciones">
+                            <a th:href="@{/historial/oficinas/{id}/retomar(id=${r.id})}" class="btn-retomar">
+                                <i class="bi bi-play-circle"></i> Retomar
+                            </a>
+                            <a th:href="@{/historial/oficinas/{id}/excel(id=${r.id})}" class="btn-dl">
+                                <i class="bi bi-file-earmark-excel"></i> Excel
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
