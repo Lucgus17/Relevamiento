@@ -11,23 +11,20 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 @Controller
 public class HomeController {
+
+    private static final Logger logger = Logger.getLogger(HomeController.class.getName());
 
     @Autowired private HistorialService historialService;
     @Autowired private MailService mailService;
 
     @GetMapping("/")
     public String inicio(HttpSession session) {
-        session.removeAttribute("relevamientoBienes");
-        session.removeAttribute("relevamientoOficina");
-        session.removeAttribute("nombreRelevamiento");
-        session.removeAttribute("ultimoSerial");
-        session.removeAttribute("relevamientoActivo");
-        session.removeAttribute("yaGuardado");
-        session.removeAttribute("historialBienesId");
-        session.removeAttribute("historialOficinaId");
+        // Limpiar sesión de forma segura
+        limpiarSesion(session);
         return "index";
     }
 
@@ -40,41 +37,80 @@ public class HomeController {
             Model model,
             HttpSession session
     ) {
-        session.setAttribute("nombreRelevamiento", nombre);
-
-        if ("OFICINAS".equals(tipo)) {
-            List<Empleado> empleados = new ArrayList<>();
-            if ("CON_EXCEL".equals(modoOficinas) && archivo != null && !archivo.isEmpty()) {
-                empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
-            }
-            RelevamientoOficina rel = new RelevamientoOficina(nombre);
-            rel.iniciar(nombre, empleados);
-            session.setAttribute("relevamientoOficina", rel);
-
-            if (session.getAttribute("historialOficinaId") == null) {
-                Long id = historialService.crearOficina(rel);
-                session.setAttribute("historialOficinaId", id);
+        try {
+            // Validación
+            if (nombre == null || nombre.trim().isEmpty()) {
+                model.addAttribute("error", "El nombre del relevamiento es obligatorio");
+                return "index";
             }
 
-            return "redirect:/oficinas/relevamiento";
+            nombre = nombre.trim();
+            session.setAttribute("nombreRelevamiento", nombre);
+
+            if ("OFICINAS".equals(tipo)) {
+                List<Empleado> empleados = new ArrayList<>();
+                if ("CON_EXCEL".equals(modoOficinas) && archivo != null && !archivo.isEmpty()) {
+                    empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
+                }
+                RelevamientoOficina rel = new RelevamientoOficina(nombre);
+                rel.iniciar(nombre, empleados);
+                session.setAttribute("relevamientoOficina", rel);
+
+                // Crear en BD
+                try {
+                    Long id = historialService.crearOficina(rel);
+                    session.setAttribute("historialOficinaId", id);
+                    // ✅ SESIÓN PERSISTENTE: Dura lo que el usuario necesite (7 días)
+                    session.setMaxInactiveInterval(604800); // 7 días = 604800 segundos
+                    logger.info("Relevamiento oficina iniciado: " + nombre + " con ID: " + id);
+                } catch (Exception ex) {
+                    logger.severe("Error al crear relevamiento en BD: " + ex.getMessage());
+                    model.addAttribute("error", "Error al inicializar el relevamiento");
+                    return "index";
+                }
+
+                return "redirect:/oficinas/relevamiento";
+            }
+
+            // RELEVAMIENTO DE BIENES
+            if (archivo == null || archivo.isEmpty()) {
+                model.addAttribute("error", "Debe cargar un archivo Excel");
+                return "index";
+            }
+
+            List<String> seriales = ExcelService.leerSeriales(archivo);
+            if (seriales == null || seriales.isEmpty()) {
+                model.addAttribute("error", "El archivo Excel no contiene datos válidos");
+                return "index";
+            }
+
+            Relevamiento relevamiento = new Relevamiento();
+            relevamiento.cargarSeriales(seriales);
+
+            session.setAttribute("relevamientoBienes", relevamiento);
+            session.setAttribute("relevamientoActivo", true);
+            session.setAttribute("ultimoSerial", null);
+            // ✅ SESIÓN PERSISTENTE: Dura lo que el usuario necesite (7 días)
+            session.setMaxInactiveInterval(604800); // 7 días = 604800 segundos
+
+            // Crear en BD
+            try {
+                Long id = historialService.crearBienes(nombre, relevamiento);
+                session.setAttribute("historialBienesId", id);
+                logger.info("Relevamiento bienes iniciado: " + nombre + " con ID: " + id);
+            } catch (Exception ex) {
+                logger.severe("Error al crear relevamiento en BD: " + ex.getMessage());
+                model.addAttribute("error", "Error al inicializar el relevamiento");
+                return "index";
+            }
+
+            return "redirect:/relevamiento";
+
+        } catch (Exception ex) {
+            logger.severe("Error en iniciarRelevamiento: " + ex.getMessage());
+            model.addAttribute("error", "Error inesperado al iniciar relevamiento");
+            return "index";
         }
-
-        if (archivo == null || archivo.isEmpty()) return "redirect:/";
-
-        List<String> seriales = ExcelService.leerSeriales(archivo);
-        Relevamiento relevamiento = new Relevamiento();
-        relevamiento.cargarSeriales(seriales);
-
-        session.setAttribute("relevamientoBienes", relevamiento);
-        session.setAttribute("relevamientoActivo", true);
-        session.setAttribute("ultimoSerial", null);
-
-        if (session.getAttribute("historialBienesId") == null) {
-            Long id = historialService.crearBienes(nombre, relevamiento);
-            session.setAttribute("historialBienesId", id);
-        }
-
-        return "redirect:/relevamiento";
     }
 
     @GetMapping("/relevamiento")
@@ -100,26 +136,39 @@ public class HomeController {
             HttpSession session
     ) {
         Map<String, String> response = new HashMap<>();
-        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+        try {
+            Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-        if (relevamiento == null) {
-            response.put("error", "No hay relevamiento activo");
-            return response;
-        }
+            if (relevamiento == null) {
+                response.put("error", "No hay relevamiento activo");
+                return response;
+            }
 
-        String serialNormalizado = serial.trim().toUpperCase();
+            if (serial == null || serial.trim().isEmpty()) {
+                response.put("error", "Serial vacío");
+                return response;
+            }
 
-        if ("encontrado".equals(accion)) {
-            relevamiento.marcarComoEncontrado(serial);
-            session.setAttribute("ultimoSerial", serial);
-            autoguardarBienes(session, relevamiento);
-            response.put("serialProcesado", serial);
-            return response;
-        } else if ("noInventariado".equals(accion)) {
-            relevamiento.agregarSobrante(serial);
-            autoguardarBienes(session, relevamiento);
-            response.put("serialProcesado", serial);
-        } else {
+            String serialNormalizado = serial.trim().toUpperCase();
+
+            if ("encontrado".equals(accion)) {
+                relevamiento.marcarComoEncontrado(serial);
+                session.setAttribute("ultimoSerial", serial);
+                // ✅ AUTOGUARDADO EN CADA CAMBIO
+                autoguardarBienes(session, relevamiento);
+                response.put("serialProcesado", serial);
+                return response;
+            }
+
+            if ("noInventariado".equals(accion)) {
+                relevamiento.agregarSobrante(serial);
+                // ✅ AUTOGUARDADO EN CADA CAMBIO
+                autoguardarBienes(session, relevamiento);
+                response.put("serialProcesado", serial);
+                return response;
+            }
+
+            // Búsqueda con sugerencias
             boolean yaEncontrado = relevamiento.getNumeroSerialEncontrado().stream()
                     .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
             boolean yaSobrante = relevamiento.getNumeroSerialSobrante().stream()
@@ -137,13 +186,19 @@ public class HomeController {
                 response.put("sugerencia", sugerencia);
                 response.put("serialOriginal", serial);
             } else {
+                // ✅ AUTOGUARDADO EN CADA CAMBIO
                 autoguardarBienes(session, relevamiento);
                 response.put("serialProcesado", serial);
             }
-        }
 
-        session.setAttribute("ultimoSerial", serial);
-        return response;
+            session.setAttribute("ultimoSerial", serial);
+            return response;
+
+        } catch (Exception ex) {
+            logger.severe("Error en agregarSerial: " + ex.getMessage());
+            response.put("error", "Error procesando serial");
+            return response;
+        }
     }
 
     @PostMapping("/eliminar-serial")
@@ -153,33 +208,61 @@ public class HomeController {
             HttpSession session
     ) {
         Map<String, String> response = new HashMap<>();
-        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+        try {
+            Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-        if (relevamiento == null) {
-            response.put("error", "No hay relevamiento activo");
+            if (relevamiento == null) {
+                response.put("error", "No hay relevamiento activo");
+                return response;
+            }
+
+            if (serial == null || serial.trim().isEmpty()) {
+                response.put("error", "Serial vacío");
+                return response;
+            }
+
+            relevamiento.eliminar(serial);
+            autoguardarBienes(session, relevamiento);
+            response.put("success", "true");
+            return response;
+
+        } catch (Exception ex) {
+            logger.severe("Error en eliminarSerial: " + ex.getMessage());
+            response.put("error", "Error eliminando serial");
             return response;
         }
-        relevamiento.eliminar(serial);
-        autoguardarBienes(session, relevamiento);
-        response.put("success", "true");
-        return response;
     }
 
     @PostMapping("/finalizar")
     public String finalizarRelevamiento(HttpSession session, Model model) {
-        String nombre = (String) session.getAttribute("nombreRelevamiento");
-        Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
+        try {
+            String nombre = (String) session.getAttribute("nombreRelevamiento");
+            Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-        if (relevamiento == null) return "redirect:/";
+            if (relevamiento == null) {
+                logger.warning("Intento de finalizar relevamiento nulo");
+                return "redirect:/";
+            }
 
-        autoguardarBienes(session, relevamiento);
+            // Guardar antes de finalizar
+            autoguardarBienes(session, relevamiento);
 
-        model.addAttribute("nombreRelevamiento", nombre);
-        model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
-        model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
-        model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
+            model.addAttribute("nombreRelevamiento", nombre);
+            model.addAttribute("esperados", relevamiento.getNumeroSerialEsperado().size());
+            model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
+            model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
 
-        return "finalizado";
+            // NO limpiar la sesión aún, por si necesita retomar
+            session.setAttribute("yaGuardado", true);
+
+            logger.info("Relevamiento finalizado: " + nombre);
+            return "finalizado";
+
+        } catch (Exception ex) {
+            logger.severe("Error finalizando relevamiento: " + ex.getMessage());
+            model.addAttribute("error", "Error al finalizar");
+            return "finalizado";
+        }
     }
 
     @GetMapping("/exportar-excel")
@@ -188,7 +271,10 @@ public class HomeController {
             String nombre = (String) session.getAttribute("nombreRelevamiento");
             Relevamiento relevamiento = (Relevamiento) session.getAttribute("relevamientoBienes");
 
-            if (relevamiento == null || nombre == null) return ResponseEntity.status(404).build();
+            if (relevamiento == null || nombre == null) {
+                logger.warning("Intento de exportar con datos nulos");
+                return ResponseEntity.status(404).build();
+            }
 
             byte[] excel = ExportService.generarExcel(
                     nombre,
@@ -196,7 +282,11 @@ public class HomeController {
                     relevamiento.getNumeroSerialEncontrado(),
                     relevamiento.getNumeroSerialSobrante()
             );
-            if (excel == null) return ResponseEntity.status(500).build();
+
+            if (excel == null) {
+                logger.warning("Error generando Excel");
+                return ResponseEntity.status(500).build();
+            }
 
             String filename = ExportService.generarNombreArchivo(nombre, "xlsx");
             return ResponseEntity.ok()
@@ -205,7 +295,7 @@ public class HomeController {
                     .body(excel);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe("Error exportando Excel: " + e.getMessage());
             return ResponseEntity.status(500).build();
         }
     }
@@ -214,10 +304,16 @@ public class HomeController {
     public ResponseEntity<byte[]> exportarExcelOficinas(HttpSession session) {
         try {
             RelevamientoOficina rel = (RelevamientoOficina) session.getAttribute("relevamientoOficina");
-            if (rel == null) return ResponseEntity.status(404).build();
+            if (rel == null) {
+                logger.warning("Intento de exportar oficinas con datos nulos");
+                return ResponseEntity.status(404).build();
+            }
 
             byte[] excel = ExportService.generarExcelOficinas(rel);
-            if (excel == null) return ResponseEntity.status(500).build();
+            if (excel == null) {
+                logger.warning("Error generando Excel de oficinas");
+                return ResponseEntity.status(500).build();
+            }
 
             String filename = ExportService.generarNombreArchivo(rel.getNombre(), "xlsx");
             return ResponseEntity.ok()
@@ -226,7 +322,7 @@ public class HomeController {
                     .body(excel);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe("Error exportando Excel de oficinas: " + e.getMessage());
             return ResponseEntity.status(500).build();
         }
     }
@@ -274,6 +370,7 @@ public class HomeController {
         try {
             String nombre = (String) session.getAttribute("nombreRelevamiento");
             Relevamiento rel = (Relevamiento) session.getAttribute("relevamientoBienes");
+
             if (rel == null || nombre == null) {
                 res.put("error", "No hay relevamiento activo");
                 return res;
@@ -285,6 +382,7 @@ public class HomeController {
                     rel.getNumeroSerialEncontrado(),
                     rel.getNumeroSerialSobrante()
             );
+
             if (excel == null) {
                 res.put("error", "Error al generar el Excel");
                 return res;
@@ -296,6 +394,7 @@ public class HomeController {
 
             res.put("ok", "true");
             res.put("destinatario", destinatario);
+            logger.info("Excel de bienes enviado a: " + destinatario);
 
         } catch (Exception e) {
             Throwable causa = e;
@@ -308,18 +407,37 @@ public class HomeController {
                 }
                 causa = causa.getCause();
             }
+            logger.severe("Error enviando Excel: " + e.getMessage());
             res.put("error", "No se pudo enviar: " + e.getMessage());
         }
         return res;
     }
 
-    // ── helpers ──────────────────────────────────────────────
+    // ── HELPERS ──────────────────────────────────────────────
 
     private void autoguardarBienes(HttpSession session, Relevamiento rel) {
-        Long id = (Long) session.getAttribute("historialBienesId");
-        String nombre = (String) session.getAttribute("nombreRelevamiento");
-        if (id != null) {
-            historialService.actualizarBienes(id, nombre, rel);
+        try {
+            Long id = (Long) session.getAttribute("historialBienesId");
+            String nombre = (String) session.getAttribute("nombreRelevamiento");
+
+            if (id != null && nombre != null) {
+                historialService.actualizarBienes(id, nombre, rel);
+                logger.fine("Autoguardado de bienes exitoso - ID: " + id);
+            }
+        } catch (Exception ex) {
+            logger.severe("Error en autoguardado de bienes: " + ex.getMessage());
+            // No lanzar excepción, el usuario puede reintentar
         }
+    }
+
+    private void limpiarSesion(HttpSession session) {
+        session.removeAttribute("relevamientoBienes");
+        session.removeAttribute("relevamientoOficina");
+        session.removeAttribute("nombreRelevamiento");
+        session.removeAttribute("ultimoSerial");
+        session.removeAttribute("relevamientoActivo");
+        session.removeAttribute("yaGuardado");
+        session.removeAttribute("historialBienesId");
+        session.removeAttribute("historialOficinaId");
     }
 }
