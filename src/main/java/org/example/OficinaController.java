@@ -1,16 +1,16 @@
 package org.example;
 
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import jakarta.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequestMapping("/oficinas")
@@ -39,7 +39,6 @@ public class OficinaController {
                 logger.warning("No hay ID de historial para guardar oficina");
                 return;
             }
-
             RelevamientoOficina rel = (RelevamientoOficina) session.getAttribute("relevamientoOficina");
             if (rel != null) {
                 historialService.actualizarOficina(id, rel);
@@ -47,7 +46,6 @@ public class OficinaController {
             }
         } catch (Exception ex) {
             logger.severe("Error en autoguardado de oficina: " + ex.getMessage());
-            // No lanzar excepción, permitir continuar
         }
     }
 
@@ -57,8 +55,7 @@ public class OficinaController {
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
             Map<String, Object> response = new HashMap<>();
-            response.put("empleados", rel.getEmpleados());
-            response.put("equiposOficina", rel.getEquiposOficina());
+            response.put("oficinas", rel.getOficinas());
             return response;
         } catch (Exception ex) {
             logger.severe("Error en obtenerDatos: " + ex.getMessage());
@@ -73,8 +70,7 @@ public class OficinaController {
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
             model.addAttribute("nombreRelevamiento", rel.getNombre());
-            model.addAttribute("empleados", rel.getEmpleados());
-            model.addAttribute("equiposOficina", rel.getEquiposOficina());
+            model.addAttribute("oficinas", rel.getOficinas());
             return "relevamiento-oficinas";
         } catch (Exception ex) {
             logger.severe("Error en mostrarRelevamiento: " + ex.getMessage());
@@ -82,22 +78,63 @@ public class OficinaController {
         }
     }
 
+    @PostMapping("/oficina")
+    public String agregarOficina(@RequestParam String nombre, HttpSession session) {
+        try {
+            if (nombre == null || nombre.isBlank()) {
+                logger.warning("Intento de agregar oficina con nombre vacío");
+                return "redirect:/oficinas/relevamiento";
+            }
+            RelevamientoOficina rel = obtenerRelevamiento(session);
+            rel.agregarOficina(new Oficina(nombre.trim()));
+            autoguardarOficina(session);
+            logger.info("Oficina agregada: " + nombre);
+            return "redirect:/oficinas/relevamiento";
+        } catch (Exception ex) {
+            logger.severe("Error al agregar oficina: " + ex.getMessage());
+            return "redirect:/oficinas/relevamiento";
+        }
+    }
+
+    @PostMapping("/eliminar-oficina")
+    @ResponseBody
+    public Map<String, String> eliminarOficina(@RequestParam int indexOficina, HttpSession session) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            RelevamientoOficina rel = obtenerRelevamiento(session);
+            if (indexOficina < 0 || indexOficina >= rel.getOficinas().size()) {
+                response.put("error", "Índice de oficina inválido");
+                return response;
+            }
+            Oficina eliminada = rel.getOficinas().remove(indexOficina);
+            autoguardarOficina(session);
+            response.put("success", "true");
+            logger.info("Oficina eliminada: " + (eliminada != null ? eliminada.getNombre() : "desconocida"));
+            return response;
+        } catch (Exception ex) {
+            logger.severe("Error al eliminar oficina: " + ex.getMessage());
+            response.put("error", "Error al eliminar");
+            return response;
+        }
+    }
+
     @PostMapping("/empleado")
-    public String agregarEmpleado(@RequestParam String nombre, HttpSession session) {
+    public String agregarEmpleado(@RequestParam int indexOficina, @RequestParam String nombre, HttpSession session) {
         try {
             if (nombre == null || nombre.isBlank()) {
                 logger.warning("Intento de agregar empleado con nombre vacío");
                 return "redirect:/oficinas/relevamiento";
             }
-
             RelevamientoOficina rel = obtenerRelevamiento(session);
-            Empleado nuevoEmpleado = new Empleado(nombre.trim());
-            rel.getEmpleados().add(nuevoEmpleado);
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                logger.warning("Índice de oficina inválido: " + indexOficina);
+                return "redirect:/oficinas/relevamiento";
+            }
+            oficina.getEmpleados().add(new Empleado(nombre.trim()));
             autoguardarOficina(session);
-
             logger.info("Empleado agregado: " + nombre);
             return "redirect:/oficinas/relevamiento";
-
         } catch (Exception ex) {
             logger.severe("Error al agregar empleado: " + ex.getMessage());
             return "redirect:/oficinas/relevamiento";
@@ -106,23 +143,28 @@ public class OficinaController {
 
     @PostMapping("/eliminar-empleado")
     @ResponseBody
-    public Map<String, String> eliminarEmpleado(@RequestParam int indexEmpleado, HttpSession session) {
+    public Map<String, String> eliminarEmpleado(
+            @RequestParam int indexOficina,
+            @RequestParam int indexEmpleado,
+            HttpSession session
+    ) {
         Map<String, String> response = new HashMap<>();
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
-
-            if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                response.put("error", "Oficina inválida");
+                return response;
+            }
+            if (indexEmpleado < 0 || indexEmpleado >= oficina.getEmpleados().size()) {
                 response.put("error", "Índice inválido");
                 return response;
             }
-
-            Empleado eliminado = rel.getEmpleados().remove(indexEmpleado);
+            Empleado eliminado = oficina.getEmpleados().remove(indexEmpleado);
             autoguardarOficina(session);
-
             response.put("success", "true");
             logger.info("Empleado eliminado: " + (eliminado != null ? eliminado.getNombre() : "desconocido"));
             return response;
-
         } catch (Exception ex) {
             logger.severe("Error al eliminar empleado: " + ex.getMessage());
             response.put("error", "Error al eliminar");
@@ -133,6 +175,7 @@ public class OficinaController {
     @PostMapping("/comentario-empleado")
     @ResponseBody
     public Map<String, Object> guardarComentario(
+            @RequestParam int indexOficina,
             @RequestParam int indexEmpleado,
             @RequestParam(defaultValue = "") String comentario,
             HttpSession session
@@ -140,19 +183,20 @@ public class OficinaController {
         Map<String, Object> response = new HashMap<>();
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
-
-            if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                response.put("error", "Oficina inválida");
+                return response;
+            }
+            if (indexEmpleado < 0 || indexEmpleado >= oficina.getEmpleados().size()) {
                 response.put("error", "Índice inválido");
                 return response;
             }
-
-            rel.getEmpleados().get(indexEmpleado).setComentario(comentario.trim());
+            oficina.getEmpleados().get(indexEmpleado).setComentario(comentario.trim());
             autoguardarOficina(session);
-
             response.put("ok", true);
-            logger.fine("Comentario guardado para empleado índice: " + indexEmpleado);
+            logger.fine("Comentario guardado - oficina " + indexOficina + ", empleado " + indexEmpleado);
             return response;
-
         } catch (Exception ex) {
             logger.severe("Error al guardar comentario: " + ex.getMessage());
             response.put("error", "Error al guardar");
@@ -162,6 +206,7 @@ public class OficinaController {
 
     @PostMapping("/equipo-usuario")
     public String agregarEquipoUsuario(
+            @RequestParam int indexOficina,
             @RequestParam int indexEmpleado,
             @RequestParam String tipo,
             @RequestParam String numeroSerie,
@@ -170,85 +215,56 @@ public class OficinaController {
     ) {
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
-
-            // Validaciones
-            if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                logger.warning("Índice de oficina inválido: " + indexOficina);
+                return "redirect:/oficinas/relevamiento";
+            }
+            if (indexEmpleado < 0 || indexEmpleado >= oficina.getEmpleados().size()) {
                 logger.warning("Índice de empleado inválido: " + indexEmpleado);
                 return "redirect:/oficinas/relevamiento";
             }
-
             if (numeroSerie == null || numeroSerie.isBlank()) {
                 logger.warning("Intento de agregar equipo sin número de serie");
                 return "redirect:/oficinas/relevamiento";
             }
-
             if (tipo == null || tipo.isBlank()) {
                 logger.warning("Intento de agregar equipo sin tipo");
                 return "redirect:/oficinas/relevamiento";
             }
 
             EquipoUsuario equipo = new EquipoUsuario(tipo.trim(), numeroSerie.trim(), nombre);
-            rel.getEmpleados().get(indexEmpleado).agregarEquipo(equipo);
+            oficina.getEmpleados().get(indexEmpleado).agregarEquipo(equipo);
             autoguardarOficina(session);
 
-            logger.info("Equipo agregado al empleado " + indexEmpleado + ": " + tipo);
+            logger.info("Equipo agregado - oficina " + indexOficina + ", empleado " + indexEmpleado + ": " + tipo);
             return "redirect:/oficinas/relevamiento";
-
         } catch (Exception ex) {
             logger.severe("Error al agregar equipo de usuario: " + ex.getMessage());
             return "redirect:/oficinas/relevamiento";
         }
     }
 
-    @PostMapping("/equipo-oficina")
-    public String agregarEquipoOficina(
-            @RequestParam String tipo,
-            @RequestParam String numeroSerie,
-            @RequestParam(required = false) String nombre,
-            HttpSession session
-    ) {
-        try {
-            // Validaciones
-            if (numeroSerie == null || numeroSerie.isBlank()) {
-                logger.warning("Intento de agregar equipo de oficina sin número de serie");
-                return "redirect:/oficinas/relevamiento";
-            }
-
-            if (tipo == null || tipo.isBlank()) {
-                logger.warning("Intento de agregar equipo de oficina sin tipo");
-                return "redirect:/oficinas/relevamiento";
-            }
-
-            RelevamientoOficina rel = obtenerRelevamiento(session);
-            EquipoOficina equipo = new EquipoOficina(tipo.trim(), numeroSerie.trim(), nombre);
-            rel.getEquiposOficina().add(equipo);
-            autoguardarOficina(session);
-
-            logger.info("Equipo de oficina agregado: " + tipo);
-            return "redirect:/oficinas/relevamiento";
-
-        } catch (Exception ex) {
-            logger.severe("Error al agregar equipo de oficina: " + ex.getMessage());
-            return "redirect:/oficinas/relevamiento";
-        }
-    }
-
     @PostMapping("/eliminar-equipo-usuario")
     public String eliminarEquipoUsuario(
+            @RequestParam int indexOficina,
             @RequestParam int indexEmpleado,
             @RequestParam int indexEquipo,
             HttpSession session
     ) {
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
-
-            if (indexEmpleado < 0 || indexEmpleado >= rel.getEmpleados().size()) {
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                logger.warning("Índice de oficina inválido: " + indexOficina);
+                return "redirect:/oficinas/relevamiento";
+            }
+            if (indexEmpleado < 0 || indexEmpleado >= oficina.getEmpleados().size()) {
                 logger.warning("Índice de empleado inválido: " + indexEmpleado);
                 return "redirect:/oficinas/relevamiento";
             }
 
-            List<EquipoUsuario> equipos = rel.getEmpleados().get(indexEmpleado).getEquipos();
-
+            List<EquipoUsuario> equipos = oficina.getEmpleados().get(indexEmpleado).getEquipos();
             if (indexEquipo < 0 || indexEquipo >= equipos.size()) {
                 logger.warning("Índice de equipo inválido: " + indexEquipo);
                 return "redirect:/oficinas/relevamiento";
@@ -259,29 +275,71 @@ public class OficinaController {
 
             logger.info("Equipo de usuario eliminado: " + (eliminado != null ? eliminado.getTipo() : "desconocido"));
             return "redirect:/oficinas/relevamiento";
-
         } catch (Exception ex) {
             logger.severe("Error al eliminar equipo de usuario: " + ex.getMessage());
             return "redirect:/oficinas/relevamiento";
         }
     }
 
-    @PostMapping("/eliminar-equipo-oficina")
-    public String eliminarEquipoOficina(@RequestParam int indexEquipo, HttpSession session) {
+    @PostMapping("/equipo-oficina")
+    public String agregarEquipoOficina(
+            @RequestParam int indexOficina,
+            @RequestParam String tipo,
+            @RequestParam String numeroSerie,
+            @RequestParam(required = false) String nombre,
+            HttpSession session
+    ) {
         try {
             RelevamientoOficina rel = obtenerRelevamiento(session);
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                logger.warning("Índice de oficina inválido: " + indexOficina);
+                return "redirect:/oficinas/relevamiento";
+            }
+            if (numeroSerie == null || numeroSerie.isBlank()) {
+                logger.warning("Intento de agregar equipo de oficina sin número de serie");
+                return "redirect:/oficinas/relevamiento";
+            }
+            if (tipo == null || tipo.isBlank()) {
+                logger.warning("Intento de agregar equipo de oficina sin tipo");
+                return "redirect:/oficinas/relevamiento";
+            }
 
-            if (indexEquipo < 0 || indexEquipo >= rel.getEquiposOficina().size()) {
+            EquipoOficina equipo = new EquipoOficina(tipo.trim(), numeroSerie.trim(), nombre);
+            oficina.getEquiposOficina().add(equipo);
+            autoguardarOficina(session);
+
+            logger.info("Equipo de oficina agregado - oficina " + indexOficina + ": " + tipo);
+            return "redirect:/oficinas/relevamiento";
+        } catch (Exception ex) {
+            logger.severe("Error al agregar equipo de oficina: " + ex.getMessage());
+            return "redirect:/oficinas/relevamiento";
+        }
+    }
+
+    @PostMapping("/eliminar-equipo-oficina")
+    public String eliminarEquipoOficina(
+            @RequestParam int indexOficina,
+            @RequestParam int indexEquipo,
+            HttpSession session
+    ) {
+        try {
+            RelevamientoOficina rel = obtenerRelevamiento(session);
+            Oficina oficina = rel.getOficina(indexOficina);
+            if (oficina == null) {
+                logger.warning("Índice de oficina inválido: " + indexOficina);
+                return "redirect:/oficinas/relevamiento";
+            }
+            if (indexEquipo < 0 || indexEquipo >= oficina.getEquiposOficina().size()) {
                 logger.warning("Índice de equipo de oficina inválido: " + indexEquipo);
                 return "redirect:/oficinas/relevamiento";
             }
 
-            EquipoOficina eliminado = rel.getEquiposOficina().remove(indexEquipo);
+            EquipoOficina eliminado = oficina.getEquiposOficina().remove(indexEquipo);
             autoguardarOficina(session);
 
             logger.info("Equipo de oficina eliminado: " + (eliminado != null ? eliminado.getTipo() : "desconocido"));
             return "redirect:/oficinas/relevamiento";
-
         } catch (Exception ex) {
             logger.severe("Error al eliminar equipo de oficina: " + ex.getMessage());
             return "redirect:/oficinas/relevamiento";
@@ -297,11 +355,12 @@ public class OficinaController {
                 return "redirect:/";
             }
 
-            // Guardar antes de finalizar
             autoguardarOficina(session);
 
             model.addAttribute("nombreRelevamiento", rel.getNombre());
-            model.addAttribute("totalEmpleados", rel.getEmpleados().size());
+            model.addAttribute("totalOficinas", rel.getOficinas().size());
+            model.addAttribute("totalEmpleados", rel.getOficinas().stream()
+                    .mapToInt(o -> o.getEmpleados().size()).sum());
             model.addAttribute("totalCPUs", rel.getTotalCPUs());
             model.addAttribute("totalMonitores", rel.getTotalMonitores());
             model.addAttribute("totalTelefonos", rel.getTotalTelefonos());
@@ -315,7 +374,6 @@ public class OficinaController {
             logger.info("Relevamiento de oficina finalizado: " + rel.getNombre());
 
             return "finalizado-oficinas";
-
         } catch (Exception ex) {
             logger.severe("Error finalizando oficinas: " + ex.getMessage());
             model.addAttribute("error", "Error al finalizar");
@@ -337,7 +395,6 @@ public class OficinaController {
                 return res;
             }
 
-            // Guardar antes de enviar
             autoguardarOficina(session);
 
             byte[] excel = ExportService.generarExcelOficinas(rel);

@@ -6,89 +6,72 @@ import java.util.List;
 public class RelevamientoOficina {
 
     private String nombre;
-    private final List<Empleado> empleados = new ArrayList<>();
-    private final List<EquipoOficina> equiposOficina = new ArrayList<>();
-
+    private final List<Oficina> oficinas = new ArrayList<>();
 
     public RelevamientoOficina(String nombre) {
         this.nombre = nombre;
     }
 
-
-    public void iniciar(String nombre, List<Empleado> empleadosIniciales) {
+    public void iniciarConOficinas(String nombre, List<Oficina> oficinasIniciales) {
         this.nombre = nombre;
-        empleados.clear();
-        equiposOficina.clear();
-        if (empleadosIniciales != null) {
-            empleados.addAll(empleadosIniciales);
+        oficinas.clear();
+        if (oficinasIniciales != null) {
+            oficinas.addAll(oficinasIniciales);
         }
     }
 
-    public String getNombre() {
-        return nombre;
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+
+    public List<Oficina> getOficinas() { return oficinas; }
+
+    public void agregarOficina(Oficina oficina) { oficinas.add(oficina); }
+
+    public Oficina getOficina(int index) {
+        if (index < 0 || index >= oficinas.size()) return null;
+        return oficinas.get(index);
     }
 
-    public List<Empleado> getEmpleados() {
-        return empleados;
-    }
-
-    public List<EquipoOficina> getEquiposOficina() {
-        return equiposOficina;
-    }
-
-
+    // ── Totales: ahora recorren TODAS las oficinas ──
 
     public int getTotalCPUs() {
-        return (int) empleados.stream()
-                .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "CPU".equalsIgnoreCase(eq.getTipo()))
-                .count();
+        return contarEquipoEmpleado("CPU");
     }
-
     public int getTotalMonitores() {
-        return (int) empleados.stream()
-                .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "Monitor".equalsIgnoreCase(eq.getTipo()))
-                .count();
+        return contarEquipoEmpleado("Monitor");
     }
-
     public int getTotalTelefonos() {
-        return (int) empleados.stream()
-                .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "Teléfono IP".equalsIgnoreCase(eq.getTipo()))
-                .count();
+        return contarEquipoEmpleado("Teléfono IP");
     }
-
     public int getTotalCamaras() {
-        return (int) empleados.stream()
-                .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "Cámara".equalsIgnoreCase(eq.getTipo()))
-                .count();
+        return contarEquipoEmpleado("Cámara");
     }
-
     public int getTotalFirmas() {
-        return (int) empleados.stream()
-                .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "Firma digital".equalsIgnoreCase(eq.getTipo()))
-                .count();
+        return contarEquipoEmpleado("Firma digital");
+    }
+    public int getTotalLectorOptico() {
+        return contarEquipoEmpleado("Lector Optico");
     }
 
-    public int getTotalLectorOptico() {
-        return (int) empleados.stream()
+    private int contarEquipoEmpleado(String tipo) {
+        return (int) oficinas.stream()
+                .flatMap(o -> o.getEmpleados().stream())
                 .flatMap(e -> e.getEquipos().stream())
-                .filter(eq -> "Lector Optico".equalsIgnoreCase(eq.getTipo()))
+                .filter(eq -> tipo.equalsIgnoreCase(eq.getTipo()))
                 .count();
     }
 
     public int getTotalImpresoras() {
-        return (int) equiposOficina.stream()
-                .filter(e -> "IMPRESORA".equalsIgnoreCase(e.getTipo()))
-                .count();
+        return contarEquipoOficina("IMPRESORA");
+    }
+    public int getTotalEscaneres() {
+        return contarEquipoOficina("ESCANER");
     }
 
-    public int getTotalEscaneres() {
-        return (int) equiposOficina.stream()
-                .filter(e -> "ESCANER".equalsIgnoreCase(e.getTipo()))
+    private int contarEquipoOficina(String tipo) {
+        return (int) oficinas.stream()
+                .flatMap(o -> o.getEquiposOficina().stream())
+                .filter(eq -> tipo.equalsIgnoreCase(eq.getTipo()))
                 .count();
     }
 }

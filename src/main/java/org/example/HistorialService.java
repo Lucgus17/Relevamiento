@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.logging.Logger;
 public class HistorialService {
 
     private static final Logger logger = Logger.getLogger(HistorialService.class.getName());
-    private static final int MAX_HISTORIAL = 20; // aumentado a 20 en lugar de 5
+    private static final int MAX_HISTORIAL = 20;
 
     @Autowired private HistorialBienesRepository bienesRepo;
     @Autowired private HistorialOficinaRepository oficinaRepo;
@@ -35,9 +36,7 @@ public class HistorialService {
             Long id = bienesRepo.save(e).getId();
             logger.info("Bienes creado con ID: " + id + " nombre: " + nombre);
 
-            // Limpieza segura (asincrónica, sin bloquear)
             limpiarBienesAsincrono();
-
             return id;
         } catch (Exception ex) {
             logger.severe("Error al crear bienes: " + ex.getMessage());
@@ -56,18 +55,15 @@ public class HistorialService {
 
             HistorialBienesEntity e = optional.get();
 
-            // PRIMERO: validar que los datos sean coherentes
             if (rel.getNumeroSerialEsperado().isEmpty()) {
                 logger.warning("Intento de guardar bienes con lista vacía");
                 return;
             }
 
-            // SEGUNDO: crear copias seguras
             List<String> nuevosEsperados = new ArrayList<>(rel.getNumeroSerialEsperado());
             List<String> nuevosEncontrados = new ArrayList<>(rel.getNumeroSerialEncontrado());
             List<String> nuevosSobrantes = new ArrayList<>(rel.getNumeroSerialSobrante());
 
-            // TERCERO: actualizar
             e.setNombre(nombre);
             e.setFecha(LocalDateTime.now());
             e.getEsperados().clear();
@@ -91,7 +87,6 @@ public class HistorialService {
     @Transactional
     public Long crearOficina(RelevamientoOficina rel) {
         try {
-            // Validación previa
             if (rel == null || rel.getNombre() == null || rel.getNombre().isBlank()) {
                 throw new IllegalArgumentException("Nombre de oficina no válido");
             }
@@ -99,17 +94,12 @@ public class HistorialService {
             HistorialOficinaEntity e = new HistorialOficinaEntity();
             e.setNombre(rel.getNombre());
             e.setFecha(LocalDateTime.now());
-
-            // Mapear datos
-            mapEmpleados(rel, e);
-            mapEquiposOficina(rel, e);
+            e.getOficinas().addAll(mapOficinas(rel));
 
             Long id = oficinaRepo.save(e).getId();
             logger.info("Oficina creada con ID: " + id + " nombre: " + rel.getNombre());
 
-            // Limpieza segura (asincrónica)
             limpiarOficinasAsincrono();
-
             return id;
         } catch (Exception ex) {
             logger.severe("Error al crear oficina: " + ex.getMessage());
@@ -128,45 +118,13 @@ public class HistorialService {
 
             HistorialOficinaEntity e = optional.get();
 
-            // SOLUCIÓN: No borrar directamente.
-            // En su lugar, mapear nuevos datos a listas nuevas primero
-            List<EmpleadoEntity> nuevosEmpleados = new ArrayList<>();
-            List<EquipoOficinaEntity> nuevosEquipos = new ArrayList<>();
+            List<OficinaEntity> nuevasOficinas = mapOficinas(rel);
 
-            // Preparar los nuevos datos en variables temporales
-            for (Empleado emp : rel.getEmpleados()) {
-                EmpleadoEntity ee = new EmpleadoEntity();
-                ee.setNombre(emp.getNombre());
-                ee.setCargo(emp.getCargo());
-                ee.setComentario(emp.getComentario());
-
-                for (EquipoUsuario eq : emp.getEquipos()) {
-                    EquipoUsuarioEntity eqe = new EquipoUsuarioEntity();
-                    eqe.setTipo(eq.getTipo());
-                    eqe.setNumeroSerie(eq.getNumeroSerie());
-                    eqe.setNombre(eq.getNombre());
-                    ee.getEquipos().add(eqe);
-                }
-                nuevosEmpleados.add(ee);
-            }
-
-            for (EquipoOficina eq : rel.getEquiposOficina()) {
-                EquipoOficinaEntity eqe = new EquipoOficinaEntity();
-                eqe.setTipo(eq.getTipo());
-                eqe.setNumeroSerie(eq.getNumeroSerie());
-                eqe.setNombre(eq.getNombre());
-                nuevosEquipos.add(eqe);
-            }
-
-            // AHORA sí, reemplazar de forma segura
             e.setNombre(rel.getNombre());
             e.setFecha(LocalDateTime.now());
-            e.getEmpleados().clear();
-            e.getEmpleados().addAll(nuevosEmpleados);
-            e.getEquiposOficina().clear();
-            e.getEquiposOficina().addAll(nuevosEquipos);
+            e.getOficinas().clear();
+            e.getOficinas().addAll(nuevasOficinas);
 
-            // Un solo save, sin saveAndFlush intermedio
             oficinaRepo.save(e);
             logger.info("Oficina actualizada con ID: " + id);
 
@@ -205,56 +163,72 @@ public class HistorialService {
     }
 
     public RelevamientoOficina toRelevamientoOficina(HistorialOficinaEntity e) {
-        List<Empleado> empleados = new ArrayList<>();
-        for (EmpleadoEntity ee : e.getEmpleados()) {
-            Empleado emp = new Empleado(ee.getNombre(), ee.getCargo());
-            emp.setComentario(ee.getComentario());
-            for (EquipoUsuarioEntity eqe : ee.getEquipos()) {
-                emp.agregarEquipo(new EquipoUsuario(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre()));
+        List<Oficina> oficinas = new ArrayList<>();
+
+        for (OficinaEntity oe : e.getOficinas()) {
+            Oficina oficina = new Oficina(oe.getNombre());
+
+            for (EmpleadoEntity ee : oe.getEmpleados()) {
+                Empleado emp = new Empleado(ee.getNombre(), ee.getCargo());
+                emp.setComentario(ee.getComentario());
+                for (EquipoUsuarioEntity eqe : ee.getEquipos()) {
+                    emp.agregarEquipo(new EquipoUsuario(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre()));
+                }
+                oficina.getEmpleados().add(emp);
             }
-            empleados.add(emp);
+
+            for (EquipoOficinaEntity eqe : oe.getEquiposOficina()) {
+                oficina.getEquiposOficina().add(
+                        new EquipoOficina(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre()));
+            }
+
+            oficinas.add(oficina);
         }
+
         RelevamientoOficina rel = new RelevamientoOficina(e.getNombre());
-        rel.iniciar(e.getNombre(), empleados);
-        for (EquipoOficinaEntity eqe : e.getEquiposOficina()) {
-            rel.getEquiposOficina().add(new EquipoOficina(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre()));
-        }
+        rel.iniciarConOficinas(e.getNombre(), oficinas);
         return rel;
     }
 
-    // ── HELPERS PRIVADOS ──────────────────────────────────────
+    // ── HELPER PRIVADO ────────────────────────────────────────
 
-    private void mapEmpleados(RelevamientoOficina rel, HistorialOficinaEntity e) {
-        for (Empleado emp : rel.getEmpleados()) {
-            EmpleadoEntity ee = new EmpleadoEntity();
-            ee.setNombre(emp.getNombre());
-            ee.setCargo(emp.getCargo());
-            ee.setComentario(emp.getComentario());
-            for (EquipoUsuario eq : emp.getEquipos()) {
-                EquipoUsuarioEntity eqe = new EquipoUsuarioEntity();
+    private List<OficinaEntity> mapOficinas(RelevamientoOficina rel) {
+        List<OficinaEntity> resultado = new ArrayList<>();
+
+        for (Oficina oficina : rel.getOficinas()) {
+            OficinaEntity oe = new OficinaEntity(oficina.getNombre());
+
+            for (Empleado emp : oficina.getEmpleados()) {
+                EmpleadoEntity ee = new EmpleadoEntity();
+                ee.setNombre(emp.getNombre());
+                ee.setCargo(emp.getCargo());
+                ee.setComentario(emp.getComentario());
+                for (EquipoUsuario eq : emp.getEquipos()) {
+                    EquipoUsuarioEntity eqe = new EquipoUsuarioEntity();
+                    eqe.setTipo(eq.getTipo());
+                    eqe.setNumeroSerie(eq.getNumeroSerie());
+                    eqe.setNombre(eq.getNombre());
+                    ee.getEquipos().add(eqe);
+                }
+                oe.getEmpleados().add(ee);
+            }
+
+            for (EquipoOficina eq : oficina.getEquiposOficina()) {
+                EquipoOficinaEntity eqe = new EquipoOficinaEntity();
                 eqe.setTipo(eq.getTipo());
                 eqe.setNumeroSerie(eq.getNumeroSerie());
                 eqe.setNombre(eq.getNombre());
-                ee.getEquipos().add(eqe);
+                oe.getEquiposOficina().add(eqe);
             }
-            e.getEmpleados().add(ee);
+
+            resultado.add(oe);
         }
+
+        return resultado;
     }
 
-    private void mapEquiposOficina(RelevamientoOficina rel, HistorialOficinaEntity e) {
-        for (EquipoOficina eq : rel.getEquiposOficina()) {
-            EquipoOficinaEntity eqe = new EquipoOficinaEntity();
-            eqe.setTipo(eq.getTipo());
-            eqe.setNumeroSerie(eq.getNumeroSerie());
-            eqe.setNombre(eq.getNombre());
-            e.getEquiposOficina().add(eqe);
-        }
-    }
+    // ── LIMPIEZA ASINCRÓNICA ──────────────────────────────────
 
-    /**
-     * Limpieza ASINCRÓNICA - no bloquea la transacción principal
-     * Mantiene los últimos 20 registros
-     */
     private void limpiarBienesAsincrono() {
         new Thread(() -> {
             try {
@@ -270,9 +244,6 @@ public class HistorialService {
         }).start();
     }
 
-    /**
-     * Limpieza ASINCRÓNICA - no bloquea la transacción principal
-     */
     private void limpiarOficinasAsincrono() {
         new Thread(() -> {
             try {

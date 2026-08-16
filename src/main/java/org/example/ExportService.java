@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
 public class ExportService {
 
     public static String generarNombreArchivo(String nombre, String extension) {
@@ -40,6 +41,7 @@ public class ExportService {
         s.setBorderRight(BorderStyle.THIN);  s.setRightBorderColor(c);
     }
 
+    /** Sin cambios respecto al original: exporta esperados/encontrados/sobrantes. */
     public static byte[] generarExcel(
             String nombre,
             List<String> esperados,
@@ -136,6 +138,20 @@ public class ExportService {
         } catch (Exception e) { e.printStackTrace(); return null; }
     }
 
+    /**
+     * Exporta el relevamiento de oficinas.
+     *
+     * CAMBIOS respecto a la versión anterior:
+     *  - Se agrega la columna OFICINA (tanto en la tabla de empleados como
+     *    en la de equipamiento de oficina) para saber a qué oficina
+     *    pertenece cada fila.
+     *  - El número de serie y el nombre de cada equipo del empleado ya NO
+     *    van juntos en la misma celda: cada tipo de equipo tiene ahora dos
+     *    columnas, "... (N/S)" y "... (Nombre)".
+     *
+     * Requiere que RelevamientoOficina exponga getOficinas() -> List<Oficina>,
+     * y que cada Oficina exponga getNombre(), getEmpleados() y getEquiposOficina().
+     */
     public static byte[] generarExcelOficinas(RelevamientoOficina rel) {
         try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
@@ -161,6 +177,10 @@ public class ExportService {
             XSSFFont fEmpleado = wb.createFont();
             fEmpleado.setFontName("Calibri"); fEmpleado.setBold(true);
             fEmpleado.setFontHeightInPoints((short) 10); fEmpleado.setColor(xc(SLATE_800));
+
+            XSSFFont fOficina = wb.createFont();
+            fOficina.setFontName("Calibri"); fOficina.setBold(true);
+            fOficina.setFontHeightInPoints((short) 10); fOficina.setColor(xc(GREEN_700));
 
             XSSFFont fCelda = wb.createFont();
             fCelda.setFontName("Calibri"); fCelda.setFontHeightInPoints((short) 10);
@@ -189,12 +209,18 @@ public class ExportService {
             sHeader.setFillForegroundColor(xc(SLATE_800)); sHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             bordes(sHeader, SLATE_600);
 
+            XSSFCellStyle sOficina = wb.createCellStyle();
+            sOficina.setFont(fOficina); sOficina.setVerticalAlignment(VerticalAlignment.CENTER);
+            sOficina.setWrapText(true);
+            sOficina.setFillForegroundColor(xc(GREEN_50)); sOficina.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            bordes(sOficina, SLATE_200);
+            sOficina.setBorderLeft(BorderStyle.MEDIUM); sOficina.setLeftBorderColor(xc(GREEN_700));
+
             XSSFCellStyle sEmpleado = wb.createCellStyle();
             sEmpleado.setFont(fEmpleado); sEmpleado.setVerticalAlignment(VerticalAlignment.CENTER);
             sEmpleado.setWrapText(true);
             sEmpleado.setFillForegroundColor(xc(SLATE_50)); sEmpleado.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             bordes(sEmpleado, SLATE_200);
-            sEmpleado.setBorderLeft(BorderStyle.MEDIUM); sEmpleado.setLeftBorderColor(xc(SLATE_800));
 
             XSSFCellStyle sCelda = wb.createCellStyle();
             sCelda.setFont(fCelda); sCelda.setVerticalAlignment(VerticalAlignment.CENTER); sCelda.setWrapText(true);
@@ -211,91 +237,116 @@ public class ExportService {
             sComentario.setFillForegroundColor(xc(AMBER_100)); sComentario.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             bordes(sComentario, AMBER_300);
 
+            // 15 columnas para la tabla de empleados (índices 0..14)
+            final int TOTAL_COLS = 15;
+
             Row rT = sheet.createRow(0); rT.setHeightInPoints(30);
             Cell cT = rT.createCell(0); cT.setCellValue(rel.getNombre()); cT.setCellStyle(sTitulo);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 7));
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, TOTAL_COLS - 1));
 
             Row rF = sheet.createRow(1); rF.setHeightInPoints(15);
             Cell cF = rF.createCell(0);
             cF.setCellValue("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
             cF.setCellStyle(sMeta);
-            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 7));
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, TOTAL_COLS - 1));
 
             sheet.createRow(2).setHeightInPoints(8);
 
             int rowNum = 3;
 
+            // ───────────── EMPLEADOS ─────────────
             Row rSecEmp = sheet.createRow(rowNum++); rSecEmp.setHeightInPoints(18);
             Cell cSecEmp = rSecEmp.createCell(0);
             cSecEmp.setCellValue("EMPLEADOS"); cSecEmp.setCellStyle(sSeccion);
-            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 7));
+            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
-            Row rHEmp = sheet.createRow(rowNum++); rHEmp.setHeightInPoints(22);
-            String[] colsEmp = {"EMPLEADO", "CPU", "MONITOR", "TELÉFONO IP", "CÁMARA", "FIRMA DIGITAL", "LECTOR ÓPTICO", "COMENTARIO"};
+            Row rHEmp = sheet.createRow(rowNum++); rHEmp.setHeightInPoints(28);
+            String[] colsEmp = {
+                    "OFICINA", "EMPLEADO",
+                    "CPU (N/S)", "CPU (Nombre)",
+                    "MONITOR (N/S)", "MONITOR (Nombre)",
+                    "TELÉFONO IP (N/S)", "TELÉFONO IP (Nombre)",
+                    "CÁMARA (N/S)", "CÁMARA (Nombre)",
+                    "FIRMA DIGITAL (N/S)", "FIRMA DIGITAL (Nombre)",
+                    "LECTOR ÓPTICO (N/S)", "LECTOR ÓPTICO (Nombre)",
+                    "COMENTARIO"
+            };
             for (int i = 0; i < colsEmp.length; i++) {
                 Cell cell = rHEmp.createCell(i); cell.setCellValue(colsEmp[i]); cell.setCellStyle(sHeader);
             }
 
             int z = 0;
-            for (Empleado emp : rel.getEmpleados()) {
-                Row row = sheet.createRow(rowNum++);
-                row.setHeight((short)-1); // auto-altura
-                XSSFCellStyle est = (z % 2 == 0) ? sCelda : sCeldaZ;
+            for (Oficina oficina : rel.getOficinas()) {
+                for (Empleado emp : oficina.getEmpleados()) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.setHeight((short) -1); // auto-altura
+                    XSSFCellStyle est = (z % 2 == 0) ? sCelda : sCeldaZ;
 
-                Cell cNombre = row.createCell(0);
-                cNombre.setCellValue(emp.getNombre()
-                        + (emp.getCargo() != null && !emp.getCargo().isBlank() ? "  ·  " + emp.getCargo() : ""));
-                cNombre.setCellStyle(sEmpleado);
+                    Cell cOficina = row.createCell(0);
+                    cOficina.setCellValue(oficina.getNombre());
+                    cOficina.setCellStyle(sOficina);
 
-                String[] textos = {
-                        buildEquipoText(emp, "CPU", "CPU"),
-                        buildEquipoText(emp, "Monitor", "Monitor"),
-                        buildEquipoText(emp, "Teléfono IP", "Teléfono"),
-                        buildEquipoText(emp, "Cámara", "Cámara"),
-                        buildEquipoText(emp, "Firma digital", "Firma"),
-                        buildEquipoText(emp, "Lector Optico", "Lector")
-                };
-                for (int col = 0; col < textos.length; col++) {
-                    Cell c = row.createCell(col + 1); c.setCellValue(textos[col]); c.setCellStyle(est);
+                    Cell cNombre = row.createCell(1);
+                    cNombre.setCellValue(emp.getNombre()
+                            + (emp.getCargo() != null && !emp.getCargo().isBlank() ? "  ·  " + emp.getCargo() : ""));
+                    cNombre.setCellStyle(sEmpleado);
+
+                    String[] tipos = {"CPU", "Monitor", "Teléfono IP", "Cámara", "Firma digital", "Lector Optico"};
+                    int col = 2;
+                    for (String tipo : tipos) {
+                        Cell cSerie = row.createCell(col++);
+                        cSerie.setCellValue(buildEquipoSerieText(emp, tipo));
+                        cSerie.setCellStyle(est);
+
+                        Cell cNombreEq = row.createCell(col++);
+                        cNombreEq.setCellValue(buildEquipoNombreText(emp, tipo));
+                        cNombreEq.setCellStyle(est);
+                    }
+
+                    String comentario = emp.getComentario();
+                    Cell cCom = row.createCell(14);
+                    cCom.setCellValue(comentario != null ? comentario : "");
+                    cCom.setCellStyle((comentario != null && !comentario.isBlank()) ? sComentario : est);
+                    z++;
                 }
-
-                String comentario = emp.getComentario();
-                Cell cCom = row.createCell(7);
-                cCom.setCellValue(comentario != null ? comentario : "");
-                cCom.setCellStyle((comentario != null && !comentario.isBlank()) ? sComentario : est);
-                z++;
             }
 
             sheet.createRow(rowNum++).setHeightInPoints(10);
 
+            // ───────────── EQUIPAMIENTO DE OFICINA ─────────────
             Row rSecOfi = sheet.createRow(rowNum++); rSecOfi.setHeightInPoints(18);
             Cell cSecOfi = rSecOfi.createCell(0);
             cSecOfi.setCellValue("EQUIPAMIENTO DE OFICINA"); cSecOfi.setCellStyle(sSeccion);
-            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, 7));
+            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
             Row rHOfi = sheet.createRow(rowNum++); rHOfi.setHeightInPoints(22);
-            String[] colsOfi = {"TIPO", "NÚMERO DE SERIE", "NOMBRE"};
+            String[] colsOfi = {"OFICINA", "TIPO", "NÚMERO DE SERIE", "NOMBRE"};
             for (int i = 0; i < colsOfi.length; i++) {
                 Cell cell = rHOfi.createCell(i); cell.setCellValue(colsOfi[i]); cell.setCellStyle(sHeader);
             }
 
             int zo = 0;
-            for (EquipoOficina eq : rel.getEquiposOficina()) {
-                Row row = sheet.createRow(rowNum++);
-                row.setHeight((short)-1); // auto-altura
-                XSSFCellStyle est = (zo % 2 == 0) ? sCelda : sCeldaZ;
-                Cell c0 = row.createCell(0); c0.setCellValue(eq.getTipo()); c0.setCellStyle(est);
-                Cell c1 = row.createCell(1); c1.setCellValue(eq.getNumeroSerie()); c1.setCellStyle(est);
-                Cell c2 = row.createCell(2); c2.setCellValue(eq.getNombre() != null ? eq.getNombre() : ""); c2.setCellStyle(est);
-                zo++;
+            for (Oficina oficina : rel.getOficinas()) {
+                for (EquipoOficina eq : oficina.getEquiposOficina()) {
+                    Row row = sheet.createRow(rowNum++);
+                    row.setHeight((short) -1);
+                    XSSFCellStyle est = (zo % 2 == 0) ? sCelda : sCeldaZ;
+
+                    Cell c0 = row.createCell(0); c0.setCellValue(oficina.getNombre()); c0.setCellStyle(sOficina);
+                    Cell c1 = row.createCell(1); c1.setCellValue(eq.getTipo()); c1.setCellStyle(est);
+                    Cell c2 = row.createCell(2); c2.setCellValue(eq.getNumeroSerie()); c2.setCellStyle(est);
+                    Cell c3 = row.createCell(3); c3.setCellValue(eq.getNombre() != null ? eq.getNombre() : ""); c3.setCellStyle(est);
+                    zo++;
+                }
             }
 
-            for (int i = 0; i < 8; i++) {
+            for (int i = 0; i < TOTAL_COLS; i++) {
                 sheet.autoSizeColumn(i);
                 sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1200);
             }
-            sheet.setColumnWidth(0, sheet.getColumnWidth(0) + 2000);
-            sheet.setColumnWidth(7, Math.max(sheet.getColumnWidth(7), 9000));
+            sheet.setColumnWidth(0, Math.max(sheet.getColumnWidth(0), 5000));
+            sheet.setColumnWidth(1, sheet.getColumnWidth(1) + 2000);
+            sheet.setColumnWidth(14, Math.max(sheet.getColumnWidth(14), 9000));
 
             wb.write(out);
             return out.toByteArray();
@@ -303,28 +354,34 @@ public class ExportService {
         } catch (Exception e) { e.printStackTrace(); return null; }
     }
 
-    private static String buildEquipoText(Empleado emp, String tipo, String prefijo) {
-        List<EquipoUsuario> lista = emp.getEquipos().stream()
+    private static List<EquipoUsuario> filtrarPorTipo(Empleado emp, String tipo) {
+        return emp.getEquipos().stream()
                 .filter(e -> tipo.equalsIgnoreCase(e.getTipo()))
                 .collect(java.util.stream.Collectors.toList());
+    }
 
+    /** Todos los números de serie de un tipo de equipo, uno por línea si hay más de uno. */
+    private static String buildEquipoSerieText(Empleado emp, String tipo) {
+        List<EquipoUsuario> lista = filtrarPorTipo(emp, tipo);
         if (lista.isEmpty()) return "";
-
-        if (lista.size() == 1) {
-            EquipoUsuario eq = lista.get(0);
-            if (eq.getNombre() != null && !eq.getNombre().isEmpty()) {
-                return eq.getNumeroSerie() + "\n" + eq.getNombre();
-            }
-            return eq.getNumeroSerie();
-        }
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < lista.size(); i++) {
-            EquipoUsuario eq = lista.get(i);
-            sb.append(prefijo).append(i + 1).append(": ").append(eq.getNumeroSerie());
-            if (eq.getNombre() != null && !eq.getNombre().isEmpty()) {
-                sb.append("\n  ").append(eq.getNombre());
-            }
+            sb.append(lista.get(i).getNumeroSerie());
+            if (i < lista.size() - 1) sb.append("\n");
+        }
+        return sb.toString();
+    }
+
+    /** Todos los nombres de un tipo de equipo, en el mismo orden/línea que buildEquipoSerieText. */
+    private static String buildEquipoNombreText(Empleado emp, String tipo) {
+        List<EquipoUsuario> lista = filtrarPorTipo(emp, tipo);
+        if (lista.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lista.size(); i++) {
+            String n = lista.get(i).getNombre();
+            sb.append(n != null ? n : "");
             if (i < lista.size() - 1) sb.append("\n");
         }
         return sb.toString();

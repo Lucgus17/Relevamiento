@@ -1,6 +1,5 @@
 package org.example;
 
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,7 +9,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.*;
+import jakarta.servlet.http.HttpSession;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @Controller
@@ -23,7 +27,6 @@ public class HomeController {
 
     @GetMapping("/")
     public String inicio(HttpSession session) {
-        // Limpiar sesión de forma segura
         limpiarSesion(session);
         return "index";
     }
@@ -38,7 +41,6 @@ public class HomeController {
             HttpSession session
     ) {
         try {
-            // Validación
             if (nombre == null || nombre.trim().isEmpty()) {
                 model.addAttribute("error", "El nombre del relevamiento es obligatorio");
                 return "index";
@@ -48,20 +50,19 @@ public class HomeController {
             session.setAttribute("nombreRelevamiento", nombre);
 
             if ("OFICINAS".equals(tipo)) {
-                List<Empleado> empleados = new ArrayList<>();
+                List<Oficina> oficinas = new ArrayList<>();
                 if ("CON_EXCEL".equals(modoOficinas) && archivo != null && !archivo.isEmpty()) {
-                    empleados = ExcelService.leerEmpleadosDesdeExcel(archivo);
+                    oficinas = ExcelService.leerOficinasDesdeExcel(archivo);
                 }
+
                 RelevamientoOficina rel = new RelevamientoOficina(nombre);
-                rel.iniciar(nombre, empleados);
+                rel.iniciarConOficinas(nombre, oficinas);
                 session.setAttribute("relevamientoOficina", rel);
 
-                // Crear en BD
                 try {
                     Long id = historialService.crearOficina(rel);
                     session.setAttribute("historialOficinaId", id);
-                    // ✅ SESIÓN PERSISTENTE: Dura lo que el usuario necesite (7 días)
-                    session.setMaxInactiveInterval(604800); // 7 días = 604800 segundos
+                    session.setMaxInactiveInterval(604800); // 7 días
                     logger.info("Relevamiento oficina iniciado: " + nombre + " con ID: " + id);
                 } catch (Exception ex) {
                     logger.severe("Error al crear relevamiento en BD: " + ex.getMessage());
@@ -90,10 +91,8 @@ public class HomeController {
             session.setAttribute("relevamientoBienes", relevamiento);
             session.setAttribute("relevamientoActivo", true);
             session.setAttribute("ultimoSerial", null);
-            // ✅ SESIÓN PERSISTENTE: Dura lo que el usuario necesite (7 días)
-            session.setMaxInactiveInterval(604800); // 7 días = 604800 segundos
+            session.setMaxInactiveInterval(604800);
 
-            // Crear en BD
             try {
                 Long id = historialService.crearBienes(nombre, relevamiento);
                 session.setAttribute("historialBienesId", id);
@@ -154,7 +153,6 @@ public class HomeController {
             if ("encontrado".equals(accion)) {
                 relevamiento.marcarComoEncontrado(serial);
                 session.setAttribute("ultimoSerial", serial);
-                // ✅ AUTOGUARDADO EN CADA CAMBIO
                 autoguardarBienes(session, relevamiento);
                 response.put("serialProcesado", serial);
                 return response;
@@ -162,13 +160,11 @@ public class HomeController {
 
             if ("noInventariado".equals(accion)) {
                 relevamiento.agregarSobrante(serial);
-                // ✅ AUTOGUARDADO EN CADA CAMBIO
                 autoguardarBienes(session, relevamiento);
                 response.put("serialProcesado", serial);
                 return response;
             }
 
-            // Búsqueda con sugerencias
             boolean yaEncontrado = relevamiento.getNumeroSerialEncontrado().stream()
                     .anyMatch(s -> s.trim().equalsIgnoreCase(serialNormalizado));
             boolean yaSobrante = relevamiento.getNumeroSerialSobrante().stream()
@@ -186,7 +182,6 @@ public class HomeController {
                 response.put("sugerencia", sugerencia);
                 response.put("serialOriginal", serial);
             } else {
-                // ✅ AUTOGUARDADO EN CADA CAMBIO
                 autoguardarBienes(session, relevamiento);
                 response.put("serialProcesado", serial);
             }
@@ -244,7 +239,6 @@ public class HomeController {
                 return "redirect:/";
             }
 
-            // Guardar antes de finalizar
             autoguardarBienes(session, relevamiento);
 
             model.addAttribute("nombreRelevamiento", nombre);
@@ -252,7 +246,6 @@ public class HomeController {
             model.addAttribute("encontrados", relevamiento.getNumeroSerialEncontrado().size());
             model.addAttribute("sobrantes", relevamiento.getNumeroSerialSobrante().size());
 
-            // NO limpiar la sesión aún, por si necesita retomar
             session.setAttribute("yaGuardado", true);
 
             logger.info("Relevamiento finalizado: " + nombre);
@@ -344,22 +337,6 @@ public class HomeController {
         return response;
     }
 
-    @GetMapping("/api/oficinas/data")
-    @ResponseBody
-    public Map<String, Object> obtenerDatosOficina(HttpSession session) {
-        RelevamientoOficina rel = (RelevamientoOficina) session.getAttribute("relevamientoOficina");
-
-        Map<String, Object> response = new HashMap<>();
-        if (rel != null) {
-            response.put("empleados", rel.getEmpleados());
-            response.put("equiposOficina", rel.getEquiposOficina());
-        } else {
-            response.put("empleados", new ArrayList<>());
-            response.put("equiposOficina", new ArrayList<>());
-        }
-        return response;
-    }
-
     @PostMapping("/enviar-excel-bienes")
     @ResponseBody
     public Map<String, String> enviarExcelBienes(
@@ -426,7 +403,6 @@ public class HomeController {
             }
         } catch (Exception ex) {
             logger.severe("Error en autoguardado de bienes: " + ex.getMessage());
-            // No lanzar excepción, el usuario puede reintentar
         }
     }
 

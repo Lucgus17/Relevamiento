@@ -47,6 +47,15 @@
             color:#22c55e;
         }
 
+        /* ─── Oficinas (acordeón raíz) ─── */
+        #accordionOficinas > .accordion-item > .accordion-button {
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1px;
+        }
+        #accordionOficinas > .accordion-item {
+            border-color: #2f6b42;
+        }
+
         /* ─── ZONA DERECHA: badge + botones en fila ─── */
         .header-right {
             position: absolute;
@@ -134,7 +143,7 @@
             transform: translateY(0);
         }
 
-        /* ─── ESTADO VACÍO (sin equipos asignados) ─── */
+        /* ─── ESTADO VACÍO (sin equipos / sin empleados en oficina) ─── */
         .estado-vacio {
             background: rgba(249,115,22,0.08);
             border: 1px dashed #f97316;
@@ -148,7 +157,7 @@
         }
         .estado-vacio i { font-size: 1rem; }
 
-        /* ─── ESTADO SIN EMPLEADOS (cartel grande) ─── */
+        /* ─── ESTADO SIN OFICINAS (cartel grande) ─── */
         .sin-empleados-estado {
             display: flex;
             flex-direction: column;
@@ -276,57 +285,107 @@
         /* ─── BOX OFICINA ─── */
         .box { background:#111827; border:1px solid #374151; border-radius:10px; padding:1rem; }
         .box-title { font-size:.9rem; color:#9ca3af; margin-bottom:.75rem; }
+
+        /* ============================= */
+        /* 🔹 TEXTAREAS E INPUTS 🔹 */
+        textarea { resize: none; font-size: 15px; }
+        input { font-size: 16px; }
+
+        /* ============================= */
+        /* 🔹 FONDO ANIMADO TIPO ESCÁNER 🔹 */
+        .bg-animado {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #0f172a, #020617);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bg-animado::before {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 250%;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 255, 255, 0.12) 45%,
+                rgba(0, 255, 255, 0.25) 50%,
+                rgba(0, 255, 255, 0.12) 55%,
+                transparent 100%
+            );
+            animation: scan 6s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes scan {
+            0% { top: -120%; }
+            100% { top: 120%; }
+        }
+
+        /* ============================= */
+        /* 🔹 BOTONES CON EFECTO GLOW 🔹 */
+        .btn-success {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 120, 0.9),
+                        0 0 40px rgba(0, 255, 120, 0.7);
+            transform: scale(1.05);
+        }
+
+        /* ============================= */
+        /* 🔹 TARJETAS MODERNAS (form agregar oficina) 🔹 */
+        .card-dark {
+            background: #0d1117;
+            border: 1px solid #1f2937;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 0 12px rgba(213, 140, 255, 0.1);
+        }
+
+        .titulo-seccion {
+            font-size: 1.3rem;
+            color: #d58cff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .contenido-app { position: relative; z-index: 1; }
     </style>
 </head>
 
 <body>
 
-<div class="container mt-4 mb-5">
+<div class="bg-animado">
+    <div class="container mt-4 mb-5 contenido-app">
 
-    <h3 class="text-center mb-4"
-        th:text="'Relevamiento de: ' + ${nombreRelevamiento}">
-    </h3>
+        <h3 class="text-center mb-4"
+            th:text="'Relevamiento de: ' + ${nombreRelevamiento}">
+        </h3>
 
-    <!-- AGREGAR EMPLEADO -->
-    <form class="card bg-dark border-secondary mb-4 p-3 d-flex flex-row gap-2"
-          onsubmit="agregarEmpleado(event)">
-        <input id="nombreEmpleado"
-               class="form-control form-control-sm w-50"
-               placeholder="Nombre del empleado" required>
-        <button type="submit" class="btn btn-success btn-sm">
-            <i class="bi bi-person-plus"></i> Agregar
-        </button>
-        <a href="/oficinas/finalizado" class="btn btn-danger btn-sm ms-auto">
-            Finalizar
-        </a>
-    </form>
-
-    <!-- EMPLEADOS -->
-    <div class="accordion" id="accordionEmpleados"></div>
-
-    <!-- OFICINA -->
-    <div class="box mt-5">
-        <div class="box-title">Equipamiento de Oficina</div>
-        <div id="listaOficina" class="mb-3"></div>
-        <form onsubmit="agregarEquipoOficina(event)" class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <select id="tipoOficina" class="form-select form-select-sm" onchange="toggleNombreOficina()">
-                    <option>IMPRESORA</option>
-                    <option>ESCANER</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <input id="serieOficina" class="form-control form-control-sm" placeholder="Número de serie" required>
-            </div>
-            <div class="col-md-3" id="nombreOficinaContainer">
-                <input id="nombreOficina" class="form-control form-control-sm" placeholder="Nombre (opcional)">
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-success btn-sm w-100">Agregar</button>
-            </div>
+        <!-- AGREGAR OFICINA -->
+        <form class="card-dark mb-4 d-flex flex-row gap-2 align-items-center"
+              onsubmit="agregarOficina(event)">
+            <input id="nombreOficinaNueva"
+                   class="form-control form-control-sm w-50"
+                   placeholder="Nombre de la oficina" required>
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-building-add"></i> Agregar Oficina
+            </button>
+            <a href="/oficinas/finalizado" class="btn btn-danger btn-sm ms-auto">
+                Finalizar
+            </a>
         </form>
-    </div>
 
+        <!-- OFICINAS -->
+        <div class="accordion" id="accordionOficinas"></div>
+
+    </div>
 </div>
 
 <!-- ════════ MODAL Comentario ════════ -->
@@ -341,7 +400,6 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Historial de comentarios previos (solo lectura) -->
                 <div id="modalComentarioPrevio" style="display:none; margin-bottom:0.75rem;">
                     <div style="font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.4rem;">
                         <i class="bi bi-clock-history me-1"></i>Comentario actual
@@ -427,13 +485,49 @@
     </div>
 </div>
 
+<!-- ════════ MODAL Eliminar Oficina ════════ -->
+<div class="modal fade" id="modalEliminarOficina" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">Confirmar Eliminación de Oficina</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea eliminar esta oficina?</p>
+                <div class="mt-2">
+                    <strong>Oficina:</strong> <span id="modalNombreOficina"></span>
+                </div>
+                <div class="alert alert-warning mt-3" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Se eliminarán también todos los empleados y el equipamiento de oficina cargados en ella.
+                </div>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminarOficina()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    let empleados = [];
-    let equiposOficina = [];
-    let eliminarData = { tipo: '', indexEmpleado: -1, indexEquipo: -1, serial: '', nombre: '' };
-    let comentarioIndexActivo = -1;
+    /* ─────────────────────────────────────────────────────────────
+       Estructura de datos:
+       oficinas = [
+         {
+           nombre: "Oficina Central",
+           empleados: [ { nombre, cargo, comentario, equipos: [{tipo, numeroSerie, nombre}] } ],
+           equiposOficina: [ {tipo, numeroSerie, nombre} ]   // IMPRESORA / ESCANER de ESA oficina
+         },
+         ...
+       ]
+       ───────────────────────────────────────────────────────────── */
+    let oficinas = [];
+    let eliminarData = { tipo: '', indexOficina: -1, indexEmpleado: -1, indexEquipo: -1, serial: '', nombre: '' };
+    let comentarioActivo = { indexOficina: -1, indexEmpleado: -1 };
 
     const iconosEquipo = {
         'CPU':           { icon: 'bi-cpu',         class: 'icon-cpu' },
@@ -450,13 +544,23 @@
         return iconosEquipo[tipo] || { icon: 'bi-gear', class: 'icon-cpu' };
     }
 
-    /* ─── RENDER TARJETA EQUIPO ─── */
-    function renderEquipoCard(eq, indexEmpleado = -1, indexEquipo = -1) {
+    function escapeHtml(texto) {
+        return (texto || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /* ─── RENDER TARJETA EQUIPO ───
+       indexEmpleado === -1  →  el equipo pertenece al equipamiento de oficina (impresora/escáner)
+       indexEmpleado >= 0    →  el equipo pertenece a ese empleado dentro de indexOficina           */
+    function renderEquipoCard(eq, indexOficina, indexEmpleado, indexEquipo) {
         const icono = getIconoEquipo(eq.tipo);
         const tipoEliminar = indexEmpleado >= 0 ? 'usuario' : 'oficina';
         return `
         <div class="equipo-card">
-            <button class="btn-trash" onclick="prepararEliminarEquipo('${tipoEliminar}', ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
+            <button class="btn-trash" onclick="prepararEliminarEquipo('${tipoEliminar}', ${indexOficina}, ${indexEmpleado}, ${indexEquipo}, '${eq.numeroSerie.replace(/'/g, "\\'")}')">
                 <i class="bi bi-trash3-fill"></i>
             </button>
             <div class="equipo-icon-container">
@@ -471,28 +575,28 @@
         </div>`;
     }
 
-    /* ─── ELIMINAR EQUIPO ─── */
-    function prepararEliminarEquipo(tipo, indexEmpleado, indexEquipo, serial) {
-        eliminarData = { tipo, indexEmpleado, indexEquipo, serial, nombre: '' };
+    /* ═══════════════════ ELIMINAR EQUIPO ═══════════════════ */
+    function prepararEliminarEquipo(tipo, indexOficina, indexEmpleado, indexEquipo, serial) {
+        eliminarData = { tipo, indexOficina, indexEmpleado, indexEquipo, serial, nombre: '' };
         document.getElementById('modalSerial').textContent = serial;
         new bootstrap.Modal(document.getElementById('modalEliminarEquipo')).show();
     }
 
     async function confirmarEliminarEquipo() {
-        const { tipo, indexEmpleado, indexEquipo } = eliminarData;
+        const { tipo, indexOficina, indexEmpleado, indexEquipo } = eliminarData;
         try {
             const url  = tipo === 'usuario' ? '/oficinas/eliminar-equipo-usuario' : '/oficinas/eliminar-equipo-oficina';
             const body = tipo === 'usuario'
-                ? `indexEmpleado=${indexEmpleado}&indexEquipo=${indexEquipo}`
-                : `indexEquipo=${indexEquipo}`;
+                ? `indexOficina=${indexOficina}&indexEmpleado=${indexEmpleado}&indexEquipo=${indexEquipo}`
+                : `indexOficina=${indexOficina}&indexEquipo=${indexEquipo}`;
             const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body });
             if (!res.ok) throw new Error('Error al eliminar');
             if (tipo === 'usuario') {
-                empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
-                actualizarEquiposEmpleado(indexEmpleado);
+                oficinas[indexOficina].empleados[indexEmpleado].equipos.splice(indexEquipo, 1);
+                actualizarEquiposEmpleado(indexOficina, indexEmpleado);
             } else {
-                equiposOficina.splice(indexEquipo, 1);
-                renderOficina();
+                oficinas[indexOficina].equiposOficina.splice(indexEquipo, 1);
+                renderOficinaEquipos(indexOficina);
             }
             bootstrap.Modal.getInstance(document.getElementById('modalEliminarEquipo')).hide();
         } catch(err) {
@@ -502,25 +606,26 @@
         }
     }
 
-    /* ─── ELIMINAR EMPLEADO ─── */
-    function prepararEliminarEmpleado(index, nombre) {
-        eliminarData = { tipo: 'empleado', indexEmpleado: index, indexEquipo: -1, serial: '', nombre };
+    /* ═══════════════════ ELIMINAR EMPLEADO ═══════════════════ */
+    function prepararEliminarEmpleado(indexOficina, indexEmpleado, nombre) {
+        eliminarData = { tipo: 'empleado', indexOficina, indexEmpleado, indexEquipo: -1, serial: '', nombre };
         document.getElementById('modalNombreEmpleado').textContent = nombre;
         new bootstrap.Modal(document.getElementById('modalEliminarEmpleado')).show();
     }
 
     async function confirmarEliminarEmpleado() {
-        const { indexEmpleado } = eliminarData;
+        const { indexOficina, indexEmpleado } = eliminarData;
         try {
             const res = await fetch('/oficinas/eliminar-empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `indexEmpleado=${indexEmpleado}`
+                body: `indexOficina=${indexOficina}&indexEmpleado=${indexEmpleado}`
             });
             const data = await res.json();
-            if (data.error) { alert(data.error); return; }
-            empleados.splice(indexEmpleado, 1);
-            renderEmpleados();
+            if (data && data.error) { alert(data.error); return; }
+            oficinas[indexOficina].empleados.splice(indexEmpleado, 1);
+            renderEmpleadosDeOficina(indexOficina);
+            actualizarBadgeOficina(indexOficina);
             bootstrap.Modal.getInstance(document.getElementById('modalEliminarEmpleado')).hide();
         } catch(err) {
             console.error('Error:', err);
@@ -529,13 +634,38 @@
         }
     }
 
-    /* ─── COMENTARIO MODAL ─── */
-    function abrirModalComentario(index) {
-        comentarioIndexActivo = index;
-        const emp = empleados[index];
+    /* ═══════════════════ ELIMINAR OFICINA ═══════════════════ */
+    function prepararEliminarOficina(indexOficina, nombre) {
+        eliminarData = { tipo: 'oficina', indexOficina, indexEmpleado: -1, indexEquipo: -1, serial: '', nombre };
+        document.getElementById('modalNombreOficina').textContent = nombre;
+        new bootstrap.Modal(document.getElementById('modalEliminarOficina')).show();
+    }
+
+    async function confirmarEliminarOficina() {
+        const { indexOficina } = eliminarData;
+        try {
+            const res = await fetch('/oficinas/eliminar-oficina', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `indexOficina=${indexOficina}`
+            });
+            if (!res.ok) throw new Error('Error al eliminar oficina');
+            oficinas.splice(indexOficina, 1);
+            renderOficinas();
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarOficina')).hide();
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al eliminar la oficina');
+            bootstrap.Modal.getInstance(document.getElementById('modalEliminarOficina')).hide();
+        }
+    }
+
+    /* ═══════════════════ COMENTARIO MODAL ═══════════════════ */
+    function abrirModalComentario(indexOficina, indexEmpleado) {
+        comentarioActivo = { indexOficina, indexEmpleado };
+        const emp = oficinas[indexOficina].empleados[indexEmpleado];
         document.getElementById('modalComentarioNombre').textContent = emp.nombre;
 
-        // Mostrar comentario previo si existe
         const previo = emp.comentario || '';
         const previoDiv   = document.getElementById('modalComentarioPrevio');
         const previoTexto = document.getElementById('modalComentarioPrevioTexto');
@@ -546,10 +676,7 @@
             previoDiv.style.display = 'none';
         }
 
-        // Mostrar/ocultar botón borrar según si hay comentario previo
         document.getElementById('btnBorrarComentario').style.display = previo ? 'inline-block' : 'none';
-
-        // Limpiar el textarea para el nuevo comentario
         document.getElementById('modalComentarioTexto').value = '';
 
         new bootstrap.Modal(document.getElementById('modalComentarioEmpleado')).show();
@@ -559,28 +686,27 @@
     }
 
     async function guardarComentarioModal() {
-        const index = comentarioIndexActivo;
-        if (index < 0) return;
+        const { indexOficina, indexEmpleado } = comentarioActivo;
+        if (indexOficina < 0 || indexEmpleado < 0) return;
         const nuevo = document.getElementById('modalComentarioTexto').value.trim();
         if (!nuevo) {
-            // Si no escribió nada, solo cerrar
             bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
             return;
         }
 
-        // Acumular: si ya hay comentario previo, agregar separado por nueva línea
-        const previo = empleados[index].comentario || '';
+        const emp = oficinas[indexOficina].empleados[indexEmpleado];
+        const previo = emp.comentario || '';
         const comentarioFinal = previo ? previo + '\n' + nuevo : nuevo;
 
         try {
             const res = await fetch('/oficinas/comentario-empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `indexEmpleado=${index}&comentario=${encodeURIComponent(comentarioFinal)}`
+                body: `indexOficina=${indexOficina}&indexEmpleado=${indexEmpleado}&comentario=${encodeURIComponent(comentarioFinal)}`
             });
             if (!res.ok) throw new Error('Error al guardar comentario');
-            empleados[index].comentario = comentarioFinal;
-            actualizarTooltipYIcono(index);
+            emp.comentario = comentarioFinal;
+            actualizarTooltipYIcono(indexOficina, indexEmpleado);
             bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
         } catch(err) {
             console.error('Error:', err);
@@ -589,17 +715,17 @@
     }
 
     async function borrarComentarioModal() {
-        const index = comentarioIndexActivo;
-        if (index < 0) return;
+        const { indexOficina, indexEmpleado } = comentarioActivo;
+        if (indexOficina < 0 || indexEmpleado < 0) return;
         try {
             const res = await fetch('/oficinas/comentario-empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `indexEmpleado=${index}&comentario=`
+                body: `indexOficina=${indexOficina}&indexEmpleado=${indexEmpleado}&comentario=`
             });
             if (!res.ok) throw new Error('Error al borrar comentario');
-            empleados[index].comentario = '';
-            actualizarTooltipYIcono(index);
+            oficinas[indexOficina].empleados[indexEmpleado].comentario = '';
+            actualizarTooltipYIcono(indexOficina, indexEmpleado);
             bootstrap.Modal.getInstance(document.getElementById('modalComentarioEmpleado')).hide();
         } catch(err) {
             console.error('Error:', err);
@@ -608,13 +734,12 @@
     }
 
     /* Actualiza el ícono en el header y el tooltip sin re-renderizar todo */
-    function actualizarTooltipYIcono(index) {
-        const item     = document.querySelector(`#emp-${index}`).closest('.accordion-item');
-        const btn      = item.querySelector('.accordion-button');
-        const comentario = empleados[index].comentario || '';
-        const texto    = comentario.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function actualizarTooltipYIcono(indexOficina, indexEmpleado) {
+        const item = document.querySelector(`#emp-${indexOficina}-${indexEmpleado}`).closest('.accordion-item');
+        const btn  = item.querySelector('.accordion-button');
+        const comentario = oficinas[indexOficina].empleados[indexEmpleado].comentario || '';
+        const texto = escapeHtml(comentario);
 
-        // ícono en el header
         let ic = btn.querySelector('.icono-comentario-guardado');
         if (comentario && !ic) {
             ic = document.createElement('i');
@@ -625,7 +750,6 @@
             ic.remove();
         }
 
-        // tooltip + clase tiene-comentario
         let tooltip = item.querySelector('.comentario-tooltip');
         if (comentario) {
             item.classList.add('tiene-comentario');
@@ -641,11 +765,12 @@
         }
     }
 
-    /* ─── TOGGLES ─── */
-    function toggleNombreOficina() {
-        const tipo = document.getElementById('tipoOficina').value;
-        const container = document.getElementById('nombreOficinaContainer');
-        const input = document.getElementById('nombreOficina');
+    /* ═══════════════════ TOGGLES ═══════════════════ */
+    function toggleNombreOficina(indexOficina) {
+        const tipo = document.getElementById('tipoOficina-' + indexOficina).value;
+        const container = document.getElementById('nombreOficinaContainer-' + indexOficina);
+        const input = document.getElementById('nombreOficina-' + indexOficina);
+        if (!container || !input) return;
         container.style.display = tipo === 'IMPRESORA' ? 'block' : 'none';
         if (tipo !== 'IMPRESORA') input.value = '';
     }
@@ -659,55 +784,145 @@
         if (tipo !== 'CPU') input.value = '';
     }
 
-    /* ─── CARGAR DATOS ─── */
+    /* ═══════════════════ CARGAR DATOS ═══════════════════ */
     async function cargarDatos() {
         try {
             const timestamp = new Date().getTime();
-            const res = await fetch('/api/oficinas/data?t=' + timestamp, {
+            const res = await fetch('/oficinas/data?t=' + timestamp, {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache' }
             });
             if (!res.ok) throw new Error('Error backend');
             const data = await res.json();
-            empleados = data.empleados || [];
-            equiposOficina = data.equiposOficina || [];
-            renderEmpleados();
-            renderOficina();
+            oficinas = data.oficinas || [];
+            renderOficinas();
         } catch(e) {
             console.error('Error al cargar datos:', e);
             setTimeout(cargarDatos, 500);
         }
     }
 
-    /* ─── RENDER EMPLEADOS ─── */
-    function renderEmpleados() {
-        const acc = document.getElementById('accordionEmpleados');
+    /* ═══════════════════ RENDER OFICINAS (acordeón raíz) ═══════════════════ */
+    function renderOficinas() {
+        const acc = document.getElementById('accordionOficinas');
         acc.innerHTML = '';
 
-        // Cartel vacío
-        if (empleados.length === 0) {
+        if (oficinas.length === 0) {
             acc.innerHTML = `
             <div class="sin-empleados-estado">
-                <i class="bi bi-people icono-grande"></i>
-                <div class="titulo">Sin empleados cargados</div>
-                <div class="subtitulo">Usá el campo de arriba para agregar empleados al relevamiento</div>
-                <div class="flecha"><i class="bi bi-arrow-up-circle-fill"></i> Agregar empleado</div>
+                <i class="bi bi-building icono-grande"></i>
+                <div class="titulo">Sin oficinas cargadas</div>
+                <div class="subtitulo">Usá el campo de arriba para agregar una oficina al relevamiento</div>
+                <div class="flecha"><i class="bi bi-arrow-up-circle-fill"></i> Agregar oficina</div>
             </div>`;
             return;
         }
 
-        empleados.forEach((emp, i) => {
+        oficinas.forEach((of, i) => {
+            const empleados = of.empleados || [];
+            const badgeClass = empleados.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos';
+            const badgeText  = empleados.length === 1 ? 'empleado' : 'empleados';
+
+            acc.innerHTML += `
+            <div class="accordion-item">
+                <div class="header-right">
+                    <span class="badge-contador ${badgeClass}">${empleados.length} ${badgeText}</span>
+                    <button class="btn-accion-empleado btn-eliminar-empleado"
+                            title="Eliminar oficina"
+                            onclick="prepararEliminarOficina(${i}, '${of.nombre.replace(/'/g, "\\'")}')">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+
+                <h2 class="accordion-header">
+                    <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#oficina-${i}">
+                        <i class="bi bi-building"></i>
+                        <span style="margin-left:0.5rem;">${of.nombre}</span>
+                    </button>
+                </h2>
+
+                <div id="oficina-${i}" class="accordion-collapse collapse">
+                    <div class="accordion-body">
+
+                        <form onsubmit="agregarEmpleado(event, ${i})" class="d-flex gap-2 mb-3">
+                            <input class="form-control form-control-sm w-50 nombre-empleado-input"
+                                   placeholder="Nombre del empleado" required>
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-person-plus"></i> Agregar empleado
+                            </button>
+                        </form>
+
+                        <div class="accordion mb-4" id="accordionEmpleados-${i}"></div>
+
+                        <div class="box mt-3">
+                            <div class="box-title">Equipamiento de Oficina (Impresoras / Escáneres)</div>
+                            <div id="listaOficinaEquipos-${i}" class="mb-3"></div>
+                            <form onsubmit="agregarEquipoOficina(event, ${i})" class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <select id="tipoOficina-${i}" class="form-select form-select-sm" onchange="toggleNombreOficina(${i})">
+                                        <option>IMPRESORA</option>
+                                        <option>ESCANER</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input id="serieOficina-${i}" class="form-control form-control-sm" placeholder="Número de serie" required>
+                                </div>
+                                <div class="col-md-3" id="nombreOficinaContainer-${i}">
+                                    <input id="nombreOficina-${i}" class="form-control form-control-sm" placeholder="Nombre (opcional)">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-success btn-sm w-100">Agregar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        // Contenido interno de cada oficina se pinta después de insertar el HTML de arriba
+        oficinas.forEach((of, i) => {
+            renderEmpleadosDeOficina(i);
+            renderOficinaEquipos(i);
+            toggleNombreOficina(i);
+        });
+    }
+
+    function actualizarBadgeOficina(indexOficina) {
+        const empleados = oficinas[indexOficina].empleados || [];
+        const oficinaEl = document.getElementById(`oficina-${indexOficina}`);
+        if (!oficinaEl) return;
+        const item = oficinaEl.closest('.accordion-item');
+        const badge = item.querySelector('.badge-contador');
+        badge.className = 'badge-contador ' + (empleados.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos');
+        badge.textContent = `${empleados.length} ${empleados.length === 1 ? 'empleado' : 'empleados'}`;
+    }
+
+    /* ═══════════════════ RENDER EMPLEADOS (dentro de una oficina) ═══════════════════ */
+    function renderEmpleadosDeOficina(indexOficina) {
+        const cont = document.getElementById(`accordionEmpleados-${indexOficina}`);
+        if (!cont) return;
+        const empleados = oficinas[indexOficina].empleados || [];
+        cont.innerHTML = '';
+
+        if (empleados.length === 0) {
+            cont.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin empleados cargados en esta oficina</span></div>`;
+            return;
+        }
+
+        empleados.forEach((emp, j) => {
             const equipos = emp.equipos || [];
             const badgeClass = equipos.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos';
             const badgeText  = equipos.length === 1 ? 'equipo' : 'equipos';
             const comentario = emp.comentario || '';
-            const textoEscapado = comentario.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            const textoEscapado = escapeHtml(comentario);
 
             const equiposHtml = equipos.length === 0
                 ? `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipos asignados</span></div>`
-                : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, i, idx)).join('')}</div>`;
+                : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, indexOficina, j, idx)).join('')}</div>`;
 
-            acc.innerHTML += `
+            cont.innerHTML += `
             <div class="accordion-item${comentario ? ' tiene-comentario' : ''}">
 
                 ${comentario ? `
@@ -719,18 +934,18 @@
                     <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
                     <button class="btn-accion-empleado btn-comentar-empleado"
                             title="Comentario"
-                            onclick="abrirModalComentario(${i})">
+                            onclick="abrirModalComentario(${indexOficina}, ${j})">
                         <i class="bi bi-chat-left-text"></i>
                     </button>
                     <button class="btn-accion-empleado btn-eliminar-empleado"
                             title="Eliminar empleado"
-                            onclick="prepararEliminarEmpleado(${i}, '${emp.nombre.replace(/'/g, "\\'")}')">
+                            onclick="prepararEliminarEmpleado(${indexOficina}, ${j}, '${emp.nombre.replace(/'/g, "\\'")}')">
                         <i class="bi bi-trash3"></i>
                     </button>
                 </div>
 
                 <h2 class="accordion-header">
-                    <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#emp-${i}">
+                    <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#emp-${indexOficina}-${j}">
                         <i class="bi bi-person"></i>
                         <span style="margin-left:0.5rem;">${emp.nombre}</span>
                         ${emp.cargo ? `<span class="text-secondary" style="font-size:0.875rem;margin-left:0.5rem;">(${emp.cargo})</span>` : ''}
@@ -738,11 +953,11 @@
                     </button>
                 </h2>
 
-                <div id="emp-${i}" class="accordion-collapse collapse">
+                <div id="emp-${indexOficina}-${j}" class="accordion-collapse collapse">
                     <div class="accordion-body">
                         <div class="equipos-container">${equiposHtml}</div>
                         <hr>
-                        <form onsubmit="agregarEquipoUsuario(event, ${i})" class="row g-2 align-items-end">
+                        <form onsubmit="agregarEquipoUsuario(event, ${indexOficina}, ${j})" class="row g-2 align-items-end">
                             <div class="col-md-3">
                                 <select class="form-select form-select-sm equipo-tipo-select" onchange="toggleNombreUsuario(this)">
                                     <option>CPU</option>
@@ -769,35 +984,71 @@
         });
     }
 
-    function actualizarEquiposEmpleado(index) {
-        const equipos = empleados[index].equipos || [];
-        const container = document.querySelector(`#emp-${index} .equipos-container`);
+    function actualizarEquiposEmpleado(indexOficina, indexEmpleado) {
+        const equipos = oficinas[indexOficina].empleados[indexEmpleado].equipos || [];
+        const container = document.querySelector(`#emp-${indexOficina}-${indexEmpleado} .equipos-container`);
         if (!container) return;
 
         container.innerHTML = equipos.length === 0
             ? `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipos asignados</span></div>`
-            : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, index, idx)).join('')}</div>`;
+            : `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, indexOficina, indexEmpleado, idx)).join('')}</div>`;
 
-        const badge = document.querySelector(`#emp-${index}`).closest('.accordion-item').querySelector('.badge-contador');
+        const badge = document.querySelector(`#emp-${indexOficina}-${indexEmpleado}`).closest('.accordion-item').querySelector('.badge-contador');
         badge.className = 'badge-contador ' + (equipos.length > 0 ? 'badge-con-equipos' : 'badge-sin-equipos');
         badge.textContent = `${equipos.length} ${equipos.length === 1 ? 'equipo' : 'equipos'}`;
     }
 
-    /* ─── AGREGAR EMPLEADO ─── */
-    async function agregarEmpleado(e) {
+    /* ═══════════════════ RENDER EQUIPAMIENTO DE OFICINA (impresoras / escáneres) ═══════════════════ */
+    function renderOficinaEquipos(indexOficina) {
+        const div = document.getElementById(`listaOficinaEquipos-${indexOficina}`);
+        if (!div) return;
+        const equipos = oficinas[indexOficina].equiposOficina || [];
+        if (equipos.length === 0) {
+            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipamiento cargado en esta oficina</span></div>`;
+            return;
+        }
+        div.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, indexOficina, -1, idx)).join('')}</div>`;
+    }
+
+    /* ═══════════════════ AGREGAR OFICINA ═══════════════════ */
+    async function agregarOficina(e) {
         e.preventDefault();
-        const input = document.getElementById('nombreEmpleado');
+        const input = document.getElementById('nombreOficinaNueva');
+        const nombre = input.value.trim();
+        if (!nombre) return;
+        try {
+            const res = await fetch('/oficinas/oficina', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'nombre=' + encodeURIComponent(nombre)
+            });
+            if (!res.ok) throw new Error('Error en la respuesta');
+            oficinas.push({ nombre, empleados: [], equiposOficina: [] });
+            renderOficinas();
+            input.value = '';
+        } catch(err) {
+            console.error('Error:', err);
+            alert('Error al agregar la oficina');
+        }
+    }
+
+    /* ═══════════════════ AGREGAR EMPLEADO ═══════════════════ */
+    async function agregarEmpleado(e, indexOficina) {
+        e.preventDefault();
+        const form = e.target;
+        const input = form.querySelector('.nombre-empleado-input');
         const nombre = input.value.trim();
         if (!nombre) return;
         try {
             const res = await fetch('/oficinas/empleado', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'nombre=' + encodeURIComponent(nombre)
+                body: `indexOficina=${indexOficina}&nombre=${encodeURIComponent(nombre)}`
             });
             if (!res.ok) throw new Error('Error en la respuesta');
-            empleados.push({ nombre, cargo: null, equipos: [], comentario: '' });
-            renderEmpleados();
+            oficinas[indexOficina].empleados.push({ nombre, cargo: null, equipos: [], comentario: '' });
+            renderEmpleadosDeOficina(indexOficina);
+            actualizarBadgeOficina(indexOficina);
             input.value = '';
         } catch(err) {
             console.error('Error:', err);
@@ -805,8 +1056,8 @@
         }
     }
 
-    /* ─── AGREGAR EQUIPO USUARIO ─── */
-    async function agregarEquipoUsuario(e, index) {
+    /* ═══════════════════ AGREGAR EQUIPO USUARIO ═══════════════════ */
+    async function agregarEquipoUsuario(e, indexOficina, indexEmpleado) {
         e.preventDefault();
         const form = e.target;
         const tipo  = form.querySelector('.equipo-tipo-select').value;
@@ -814,7 +1065,7 @@
         const nombre = form.querySelector('.nombre-usuario-input').value;
         if (!serie) return;
         try {
-            let body = `indexEmpleado=${index}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}`;
+            let body = `indexOficina=${indexOficina}&indexEmpleado=${indexEmpleado}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}`;
             if (nombre) body += `&nombre=${encodeURIComponent(nombre)}`;
             const res = await fetch('/oficinas/equipo-usuario', {
                 method: 'POST',
@@ -822,8 +1073,8 @@
                 body
             });
             if (!res.ok) throw new Error('Error');
-            empleados[index].equipos.push({ tipo, numeroSerie: serie, nombre: nombre || null });
-            actualizarEquiposEmpleado(index);
+            oficinas[indexOficina].empleados[indexEmpleado].equipos.push({ tipo, numeroSerie: serie, nombre: nombre || null });
+            actualizarEquiposEmpleado(indexOficina, indexEmpleado);
             form.querySelector('.numero-serie-input').value = '';
             form.querySelector('.nombre-usuario-input').value = '';
             form.querySelector('.numero-serie-input').focus();
@@ -833,44 +1084,32 @@
         }
     }
 
-    /* ─── AGREGAR EQUIPO OFICINA ─── */
-    async function agregarEquipoOficina(e) {
+    /* ═══════════════════ AGREGAR EQUIPO OFICINA (impresora / escáner) ═══════════════════ */
+    async function agregarEquipoOficina(e, indexOficina) {
         e.preventDefault();
-        const tipo   = document.getElementById('tipoOficina').value;
-        const serie  = document.getElementById('serieOficina').value;
-        const nombre = document.getElementById('nombreOficina').value;
+        const tipo   = document.getElementById('tipoOficina-' + indexOficina).value;
+        const serie  = document.getElementById('serieOficina-' + indexOficina).value;
+        const nombre = document.getElementById('nombreOficina-' + indexOficina).value;
         if (!serie) return;
         try {
             const res = await fetch('/oficinas/equipo-oficina', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}`
+                body: `indexOficina=${indexOficina}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}`
             });
             if (!res.ok) throw new Error('Error');
-            equiposOficina.push({ tipo, numeroSerie: serie, nombre: nombre || null });
-            renderOficina();
-            document.getElementById('serieOficina').value = '';
-            document.getElementById('nombreOficina').value = '';
-            document.getElementById('serieOficina').focus();
+            oficinas[indexOficina].equiposOficina.push({ tipo, numeroSerie: serie, nombre: nombre || null });
+            renderOficinaEquipos(indexOficina);
+            document.getElementById('serieOficina-' + indexOficina).value = '';
+            document.getElementById('nombreOficina-' + indexOficina).value = '';
+            document.getElementById('serieOficina-' + indexOficina).focus();
         } catch(err) {
             console.error(err);
             alert('Error al agregar equipo');
         }
     }
 
-    /* ─── RENDER OFICINA ─── */
-    function renderOficina() {
-        const div = document.getElementById('listaOficina');
-        div.innerHTML = '';
-        if (equiposOficina.length === 0) {
-            div.innerHTML = `<div class="estado-vacio"><i class="bi bi-inbox"></i><span>Sin equipamiento cargado</span></div>`;
-            return;
-        }
-        div.innerHTML = `<div class="equipos-grid">${equiposOficina.map((eq, idx) => renderEquipoCard(eq, -1, idx)).join('')}</div>`;
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
-        toggleNombreOficina();
         cargarDatos();
     });
 
