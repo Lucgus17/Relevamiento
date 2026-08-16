@@ -64,7 +64,7 @@ public class ExcelService {
      *   Fila 5: OFICINA NORTE          <- negrita
      *   Fila 6: Pedro López
      */
-    public static List<Oficina> leerOficinasDesdeExcel(MultipartFile archivo) {
+    public static List<Oficina> leerOficinasDesdeExcel(MultipartFile archivo, String nombreFallback) {
         List<Oficina> oficinas = new ArrayList<>();
 
         try (InputStream is = archivo.getInputStream()) {
@@ -74,7 +74,6 @@ public class ExcelService {
 
             Oficina oficinaActual = null;
 
-            // arranca en 1 para saltear la fila de encabezado
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
@@ -88,11 +87,15 @@ public class ExcelService {
                 if (esCeldaNegrita(workbook, cell)) {
                     oficinaActual = new Oficina(valor);
                     oficinas.add(oficinaActual);
-                } else if (oficinaActual != null) {
+                } else {
+                    if (oficinaActual == null) {
+                        // No hubo negrita todavía: se crea una oficina implícita
+                        // con el nombre del relevamiento, y ahí van todos los empleados
+                        oficinaActual = new Oficina(nombreFallback);
+                        oficinas.add(oficinaActual);
+                    }
                     oficinaActual.getEmpleados().add(new Empleado(valor, null));
                 }
-                // si aparece un nombre antes de la primera oficina (oficinaActual == null),
-                // se ignora porque no sabemos a qué oficina pertenece.
             }
 
             workbook.close();

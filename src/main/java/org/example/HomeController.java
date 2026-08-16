@@ -52,7 +52,7 @@ public class HomeController {
             if ("OFICINAS".equals(tipo)) {
                 List<Oficina> oficinas = new ArrayList<>();
                 if ("CON_EXCEL".equals(modoOficinas) && archivo != null && !archivo.isEmpty()) {
-                    oficinas = ExcelService.leerOficinasDesdeExcel(archivo);
+                    oficinas = ExcelService.leerOficinasDesdeExcel(archivo, nombre);
                 }
 
                 RelevamientoOficina rel = new RelevamientoOficina(nombre);

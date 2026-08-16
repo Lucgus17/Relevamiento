@@ -34,6 +34,10 @@
             position: relative;
         }
 
+        h2.accordion-header {
+            position: relative;
+        }
+
         /* Espacio para: badge + btn-comentario + btn-eliminar */
         .accordion-button {
             background:#181b23;
@@ -552,9 +556,6 @@
             .replace(/"/g, '&quot;');
     }
 
-    /* ─── RENDER TARJETA EQUIPO ───
-       indexEmpleado === -1  →  el equipo pertenece al equipamiento de oficina (impresora/escáner)
-       indexEmpleado >= 0    →  el equipo pertenece a ese empleado dentro de indexOficina           */
     function renderEquipoCard(eq, indexOficina, indexEmpleado, indexEquipo) {
         const icono = getIconoEquipo(eq.tipo);
         const tipoEliminar = indexEmpleado >= 0 ? 'usuario' : 'oficina';
@@ -571,11 +572,11 @@
                 <div class="info-label">S/N</div>
                 <div class="info-value">${eq.numeroSerie}</div>
                 ${eq.nombre ? `<div class="equipo-nombre"><div class="info-label" style="margin-top:0.75rem;">Nombre</div><div class="info-value">${eq.nombre}</div></div>` : ''}
+                ${eq.ip ? `<div class="equipo-nombre"><div class="info-label" style="margin-top:0.75rem;">IP</div><div class="info-value">${eq.ip}</div></div>` : ''}
             </div>
         </div>`;
     }
 
-    /* ═══════════════════ ELIMINAR EQUIPO ═══════════════════ */
     function prepararEliminarEquipo(tipo, indexOficina, indexEmpleado, indexEquipo, serial) {
         eliminarData = { tipo, indexOficina, indexEmpleado, indexEquipo, serial, nombre: '' };
         document.getElementById('modalSerial').textContent = serial;
@@ -606,7 +607,6 @@
         }
     }
 
-    /* ═══════════════════ ELIMINAR EMPLEADO ═══════════════════ */
     function prepararEliminarEmpleado(indexOficina, indexEmpleado, nombre) {
         eliminarData = { tipo: 'empleado', indexOficina, indexEmpleado, indexEquipo: -1, serial: '', nombre };
         document.getElementById('modalNombreEmpleado').textContent = nombre;
@@ -634,7 +634,6 @@
         }
     }
 
-    /* ═══════════════════ ELIMINAR OFICINA ═══════════════════ */
     function prepararEliminarOficina(indexOficina, nombre) {
         eliminarData = { tipo: 'oficina', indexOficina, indexEmpleado: -1, indexEquipo: -1, serial: '', nombre };
         document.getElementById('modalNombreOficina').textContent = nombre;
@@ -660,7 +659,6 @@
         }
     }
 
-    /* ═══════════════════ COMENTARIO MODAL ═══════════════════ */
     function abrirModalComentario(indexOficina, indexEmpleado) {
         comentarioActivo = { indexOficina, indexEmpleado };
         const emp = oficinas[indexOficina].empleados[indexEmpleado];
@@ -733,7 +731,6 @@
         }
     }
 
-    /* Actualiza el ícono en el header y el tooltip sin re-renderizar todo */
     function actualizarTooltipYIcono(indexOficina, indexEmpleado) {
         const item = document.querySelector(`#emp-${indexOficina}-${indexEmpleado}`).closest('.accordion-item');
         const btn  = item.querySelector('.accordion-button');
@@ -765,14 +762,13 @@
         }
     }
 
-    /* ═══════════════════ TOGGLES ═══════════════════ */
-    function toggleNombreOficina(indexOficina) {
+    function toggleCamposOficina(indexOficina) {
         const tipo = document.getElementById('tipoOficina-' + indexOficina).value;
-        const container = document.getElementById('nombreOficinaContainer-' + indexOficina);
-        const input = document.getElementById('nombreOficina-' + indexOficina);
-        if (!container || !input) return;
-        container.style.display = tipo === 'IMPRESORA' ? 'block' : 'none';
-        if (tipo !== 'IMPRESORA') input.value = '';
+        const ipContainer = document.getElementById('ipOficinaContainer-' + indexOficina);
+        const ipInput = document.getElementById('ipOficina-' + indexOficina);
+        if (!ipContainer || !ipInput) return;
+        ipContainer.style.display = tipo === 'IMPRESORA' ? 'block' : 'none';
+        if (tipo !== 'IMPRESORA') ipInput.value = '';
     }
 
     function toggleNombreUsuario(select) {
@@ -784,7 +780,6 @@
         if (tipo !== 'CPU') input.value = '';
     }
 
-    /* ═══════════════════ CARGAR DATOS ═══════════════════ */
     async function cargarDatos() {
         try {
             const timestamp = new Date().getTime();
@@ -802,7 +797,6 @@
         }
     }
 
-    /* ═══════════════════ RENDER OFICINAS (acordeón raíz) ═══════════════════ */
     function renderOficinas() {
         const acc = document.getElementById('accordionOficinas');
         acc.innerHTML = '';
@@ -825,16 +819,15 @@
 
             acc.innerHTML += `
             <div class="accordion-item">
-                <div class="header-right">
-                    <span class="badge-contador ${badgeClass}">${empleados.length} ${badgeText}</span>
-                    <button class="btn-accion-empleado btn-eliminar-empleado"
-                            title="Eliminar oficina"
-                            onclick="prepararEliminarOficina(${i}, '${of.nombre.replace(/'/g, "\\'")}')">
-                        <i class="bi bi-trash3"></i>
-                    </button>
-                </div>
-
                 <h2 class="accordion-header">
+                    <div class="header-right">
+                        <span class="badge-contador ${badgeClass}">${empleados.length} ${badgeText}</span>
+                        <button class="btn-accion-empleado btn-eliminar-empleado"
+                                title="Eliminar oficina"
+                                onclick="prepararEliminarOficina(${i}, '${of.nombre.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
                     <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#oficina-${i}">
                         <i class="bi bi-building"></i>
                         <span style="margin-left:0.5rem;">${of.nombre}</span>
@@ -858,19 +851,21 @@
                             <div class="box-title">Equipamiento de Oficina (Impresoras / Escáneres)</div>
                             <div id="listaOficinaEquipos-${i}" class="mb-3"></div>
                             <form onsubmit="agregarEquipoOficina(event, ${i})" class="row g-2 align-items-end">
-                                <div class="col-md-3">
-                                    <select id="tipoOficina-${i}" class="form-select form-select-sm" onchange="toggleNombreOficina(${i})">
+                                <div class="col-md-2">
+                                    <select id="tipoOficina-${i}" class="form-select form-select-sm" onchange="toggleCamposOficina(${i})">
                                         <option>IMPRESORA</option>
                                         <option>ESCANER</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3" id="nombreOficinaContainer-${i}">
+                                <div class="col-md-3">
                                     <input id="nombreOficina-${i}" class="form-control form-control-sm" placeholder="Nombre (opcional)">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2" id="ipOficinaContainer-${i}">
+                                    <input id="ipOficina-${i}" class="form-control form-control-sm" placeholder="IP (opcional)">
+                                </div>
+                                <div class="col-md-3">
                                     <input id="serieOficina-${i}" class="form-control form-control-sm" placeholder="Número de serie" required>
                                 </div>
-
                                 <div class="col-md-2">
                                     <button class="btn btn-success btn-sm w-100">Agregar</button>
                                 </div>
@@ -882,11 +877,10 @@
             </div>`;
         });
 
-        // Contenido interno de cada oficina se pinta después de insertar el HTML de arriba
         oficinas.forEach((of, i) => {
             renderEmpleadosDeOficina(i);
             renderOficinaEquipos(i);
-            toggleNombreOficina(i);
+            toggleCamposOficina(i);
         });
     }
 
@@ -900,7 +894,6 @@
         badge.textContent = `${empleados.length} ${empleados.length === 1 ? 'empleado' : 'empleados'}`;
     }
 
-    /* ═══════════════════ RENDER EMPLEADOS (dentro de una oficina) ═══════════════════ */
     function renderEmpleadosDeOficina(indexOficina) {
         const cont = document.getElementById(`accordionEmpleados-${indexOficina}`);
         if (!cont) return;
@@ -931,21 +924,20 @@
                     <i class="bi bi-chat-left-text-fill me-1" style="color:#f97316;"></i>${textoEscapado}
                 </div>` : ''}
 
-                <div class="header-right">
-                    <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
-                    <button class="btn-accion-empleado btn-comentar-empleado"
-                            title="Comentario"
-                            onclick="abrirModalComentario(${indexOficina}, ${j})">
-                        <i class="bi bi-chat-left-text"></i>
-                    </button>
-                    <button class="btn-accion-empleado btn-eliminar-empleado"
-                            title="Eliminar empleado"
-                            onclick="prepararEliminarEmpleado(${indexOficina}, ${j}, '${emp.nombre.replace(/'/g, "\\'")}')">
-                        <i class="bi bi-trash3"></i>
-                    </button>
-                </div>
-
                 <h2 class="accordion-header">
+                    <div class="header-right">
+                        <span class="badge-contador ${badgeClass}">${equipos.length} ${badgeText}</span>
+                        <button class="btn-accion-empleado btn-comentar-empleado"
+                                title="Comentario"
+                                onclick="abrirModalComentario(${indexOficina}, ${j})">
+                            <i class="bi bi-chat-left-text"></i>
+                        </button>
+                        <button class="btn-accion-empleado btn-eliminar-empleado"
+                                title="Eliminar empleado"
+                                onclick="prepararEliminarEmpleado(${indexOficina}, ${j}, '${emp.nombre.replace(/'/g, "\\'")}')">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
                     <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#emp-${indexOficina}-${j}">
                         <i class="bi bi-person"></i>
                         <span style="margin-left:0.5rem;">${emp.nombre}</span>
@@ -999,7 +991,6 @@
         badge.textContent = `${equipos.length} ${equipos.length === 1 ? 'equipo' : 'equipos'}`;
     }
 
-    /* ═══════════════════ RENDER EQUIPAMIENTO DE OFICINA (impresoras / escáneres) ═══════════════════ */
     function renderOficinaEquipos(indexOficina) {
         const div = document.getElementById(`listaOficinaEquipos-${indexOficina}`);
         if (!div) return;
@@ -1011,7 +1002,6 @@
         div.innerHTML = `<div class="equipos-grid">${equipos.map((eq, idx) => renderEquipoCard(eq, indexOficina, -1, idx)).join('')}</div>`;
     }
 
-    /* ═══════════════════ AGREGAR OFICINA ═══════════════════ */
     async function agregarOficina(e) {
         e.preventDefault();
         const input = document.getElementById('nombreOficinaNueva');
@@ -1033,7 +1023,6 @@
         }
     }
 
-    /* ═══════════════════ AGREGAR EMPLEADO ═══════════════════ */
     async function agregarEmpleado(e, indexOficina) {
         e.preventDefault();
         const form = e.target;
@@ -1057,7 +1046,6 @@
         }
     }
 
-    /* ═══════════════════ AGREGAR EQUIPO USUARIO ═══════════════════ */
     async function agregarEquipoUsuario(e, indexOficina, indexEmpleado) {
         e.preventDefault();
         const form = e.target;
@@ -1085,24 +1073,26 @@
         }
     }
 
-    /* ═══════════════════ AGREGAR EQUIPO OFICINA (impresora / escáner) ═══════════════════ */
     async function agregarEquipoOficina(e, indexOficina) {
         e.preventDefault();
         const tipo   = document.getElementById('tipoOficina-' + indexOficina).value;
         const serie  = document.getElementById('serieOficina-' + indexOficina).value;
         const nombre = document.getElementById('nombreOficina-' + indexOficina).value;
+        const ipInput = document.getElementById('ipOficina-' + indexOficina);
+        const ip = ipInput ? ipInput.value : '';
         if (!serie) return;
         try {
             const res = await fetch('/oficinas/equipo-oficina', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `indexOficina=${indexOficina}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}`
+                body: `indexOficina=${indexOficina}&tipo=${encodeURIComponent(tipo)}&numeroSerie=${encodeURIComponent(serie)}&nombre=${encodeURIComponent(nombre)}&ip=${encodeURIComponent(ip)}`
             });
             if (!res.ok) throw new Error('Error');
-            oficinas[indexOficina].equiposOficina.push({ tipo, numeroSerie: serie, nombre: nombre || null });
+            oficinas[indexOficina].equiposOficina.push({ tipo, numeroSerie: serie, nombre: nombre || null, ip: ip || null });
             renderOficinaEquipos(indexOficina);
             document.getElementById('serieOficina-' + indexOficina).value = '';
             document.getElementById('nombreOficina-' + indexOficina).value = '';
+            if (ipInput) ipInput.value = '';
             document.getElementById('serieOficina-' + indexOficina).focus();
         } catch(err) {
             console.error(err);
@@ -1114,7 +1104,6 @@
         cargarDatos();
     });
 
-    // Recargar al volver con la flecha del navegador
     window.addEventListener('pageshow', function(event) {
         if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
             cargarDatos();

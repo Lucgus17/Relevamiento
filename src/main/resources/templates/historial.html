@@ -82,6 +82,7 @@
         .stats-pill .v-sob { color: #f87171; font-weight: 700; }
         .stats-pill .v-emp { color: #4ade80; font-weight: 700; }
         .stats-pill .v-ofi { color: #f97316; font-weight: 700; }
+        .stats-pill .v-cod { color: #fccb05; font-weight: 700; }
 
         .btn-dl {
             display: inline-flex;
@@ -177,9 +178,9 @@
                     <td class="fecha-cell"  th:text="${r.fechaFormateada}"></td>
                     <td>
                         <span class="stats-pill">
-                            <span class="v-esp" th:text="${#lists.size(r.esperados)}"></span> Esperados ·
-                            <span class="v-enc" th:text="${#lists.size(r.encontrados)}"></span> Encontrados ·
-                            <span class="v-sob" th:text="${#lists.size(r.sobrantes)}"></span> Sobrantes
+                            <span class="v-cod" th:text="${#lists.size(r.oficinas)}"></span> Oficinas ·
+                            <span class="v-emp" th:text="${r.totalEmpleados}"></span> Empleados ·
+                            <span class="v-ofi" th:text="${r.totalEquiposOficina}"></span> Eq. Oficinas
                         </span>
                     </td>
                     <td>
@@ -221,10 +222,13 @@
                     <td class="nombre-cell" th:text="${r.nombre}"></td>
                     <td class="fecha-cell"  th:text="${r.fechaFormateada}"></td>
                     <td>
+                    <td>
                         <span class="stats-pill">
-                            <span class="v-emp" th:text="${#lists.size(r.empleados)}"></span> Empleados ·
-                            <span class="v-ofi" th:text="${#lists.size(r.equiposOficina)}"></span> Eq. Oficinas
+                            <span class="v-cod" th:text="${#lists.size(r.oficinas)}"></span> Oficinas ·
+                            <span class="v-emp" th:text="${r.totalEmpleados}"></span> Empleados ·
+                            <span class="v-ofi" th:text="${r.totalEquiposOficina}"></span> Eq. Oficinas
                         </span>
+                    </td>
                     </td>
                     <td>
                         <div class="acciones">

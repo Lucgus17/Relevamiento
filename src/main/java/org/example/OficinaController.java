@@ -287,6 +287,7 @@ public class OficinaController {
             @RequestParam String tipo,
             @RequestParam String numeroSerie,
             @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String ip,     // ← nuevo
             HttpSession session
     ) {
         try {
@@ -305,7 +306,7 @@ public class OficinaController {
                 return "redirect:/oficinas/relevamiento";
             }
 
-            EquipoOficina equipo = new EquipoOficina(tipo.trim(), numeroSerie.trim(), nombre);
+            EquipoOficina equipo = new EquipoOficina(tipo.trim(), numeroSerie.trim(), nombre, ip);
             oficina.getEquiposOficina().add(equipo);
             autoguardarOficina(session);
 

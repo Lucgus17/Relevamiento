@@ -179,7 +179,7 @@ public class HistorialService {
 
             for (EquipoOficinaEntity eqe : oe.getEquiposOficina()) {
                 oficina.getEquiposOficina().add(
-                        new EquipoOficina(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre()));
+                        new EquipoOficina(eqe.getTipo(), eqe.getNumeroSerie(), eqe.getNombre(), eqe.getIp()));  // ← agregado eqe.getIp()
             }
 
             oficinas.add(oficina);
@@ -218,6 +218,7 @@ public class HistorialService {
                 eqe.setTipo(eq.getTipo());
                 eqe.setNumeroSerie(eq.getNumeroSerie());
                 eqe.setNombre(eq.getNombre());
+                eqe.setIp(eq.getIp());
                 oe.getEquiposOficina().add(eqe);
             }
 

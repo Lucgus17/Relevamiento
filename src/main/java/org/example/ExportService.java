@@ -3,11 +3,13 @@ package org.example;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
-
+import java.util.ArrayList;
+import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
+
+
 
 
 public class ExportService {
@@ -166,9 +168,13 @@ public class ExportService {
             fMeta.setFontName("Calibri"); fMeta.setItalic(true);
             fMeta.setFontHeightInPoints((short) 9); fMeta.setColor(xc(SLATE_600));
 
-            XSSFFont fSeccion = wb.createFont();
-            fSeccion.setFontName("Calibri"); fSeccion.setBold(true);
-            fSeccion.setFontHeightInPoints((short) 10); fSeccion.setColor(xc(GREEN_700));
+            XSSFFont fOficinaTitulo = wb.createFont();
+            fOficinaTitulo.setFontName("Calibri"); fOficinaTitulo.setBold(true);
+            fOficinaTitulo.setFontHeightInPoints((short) 13); fOficinaTitulo.setColor(xc(WHITE));
+
+            XSSFFont fSubSeccion = wb.createFont();
+            fSubSeccion.setFontName("Calibri"); fSubSeccion.setBold(true); fSubSeccion.setItalic(true);
+            fSubSeccion.setFontHeightInPoints((short) 9); fSubSeccion.setColor(xc(GREEN_700));
 
             XSSFFont fHeader = wb.createFont();
             fHeader.setFontName("Calibri"); fHeader.setBold(true);
@@ -177,10 +183,6 @@ public class ExportService {
             XSSFFont fEmpleado = wb.createFont();
             fEmpleado.setFontName("Calibri"); fEmpleado.setBold(true);
             fEmpleado.setFontHeightInPoints((short) 10); fEmpleado.setColor(xc(SLATE_800));
-
-            XSSFFont fOficina = wb.createFont();
-            fOficina.setFontName("Calibri"); fOficina.setBold(true);
-            fOficina.setFontHeightInPoints((short) 10); fOficina.setColor(xc(GREEN_700));
 
             XSSFFont fCelda = wb.createFont();
             fCelda.setFontName("Calibri"); fCelda.setFontHeightInPoints((short) 10);
@@ -198,23 +200,21 @@ public class ExportService {
             sMeta.setFont(fMeta);
             sMeta.setFillForegroundColor(xc(WHITE)); sMeta.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            XSSFCellStyle sSeccion = wb.createCellStyle();
-            sSeccion.setFont(fSeccion); sSeccion.setVerticalAlignment(VerticalAlignment.CENTER);
-            sSeccion.setFillForegroundColor(xc(GREEN_50)); sSeccion.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            sSeccion.setBorderBottom(BorderStyle.THIN); sSeccion.setBottomBorderColor(xc(GREEN_200));
+            XSSFCellStyle sOficinaTitulo = wb.createCellStyle();
+            sOficinaTitulo.setFont(fOficinaTitulo); sOficinaTitulo.setVerticalAlignment(VerticalAlignment.CENTER);
+            sOficinaTitulo.setIndention((short) 1);
+            sOficinaTitulo.setFillForegroundColor(xc(GREEN_700)); sOficinaTitulo.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            XSSFCellStyle sSubSeccion = wb.createCellStyle();
+            sSubSeccion.setFont(fSubSeccion); sSubSeccion.setVerticalAlignment(VerticalAlignment.CENTER);
+            sSubSeccion.setIndention((short) 1);
+            sSubSeccion.setFillForegroundColor(xc(GREEN_50)); sSubSeccion.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
             XSSFCellStyle sHeader = wb.createCellStyle();
             sHeader.setFont(fHeader); sHeader.setAlignment(HorizontalAlignment.CENTER);
             sHeader.setVerticalAlignment(VerticalAlignment.CENTER); sHeader.setWrapText(true);
             sHeader.setFillForegroundColor(xc(SLATE_800)); sHeader.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             bordes(sHeader, SLATE_600);
-
-            XSSFCellStyle sOficina = wb.createCellStyle();
-            sOficina.setFont(fOficina); sOficina.setVerticalAlignment(VerticalAlignment.CENTER);
-            sOficina.setWrapText(true);
-            sOficina.setFillForegroundColor(xc(GREEN_50)); sOficina.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-            bordes(sOficina, SLATE_200);
-            sOficina.setBorderLeft(BorderStyle.MEDIUM); sOficina.setLeftBorderColor(xc(GREEN_700));
 
             XSSFCellStyle sEmpleado = wb.createCellStyle();
             sEmpleado.setFont(fEmpleado); sEmpleado.setVerticalAlignment(VerticalAlignment.CENTER);
@@ -237,107 +237,138 @@ public class ExportService {
             sComentario.setFillForegroundColor(xc(AMBER_100)); sComentario.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             bordes(sComentario, AMBER_300);
 
-            // 15 columnas para la tabla de empleados (índices 0..14)
-            final int TOTAL_COLS = 15;
+            // ── Columnas de la tabla de EMPLEADOS: EMPLEADO + tipos de equipo (solo CPU tiene "Nombre") + COMENTARIO ──
+            final String[] tiposEmpleado       = {"CPU", "Monitor", "Teléfono IP", "Cámara", "Firma digital", "Lector Optico"};
+            final boolean[] tieneNombreEmpleado = {true,  false,     false,         false,     false,           false};
 
-            Row rT = sheet.createRow(0); rT.setHeightInPoints(30);
+            List<String> colsEmpList = new ArrayList<>();
+            colsEmpList.add("EMPLEADO");
+            for (int t = 0; t < tiposEmpleado.length; t++) {
+                String tipoUpper = tiposEmpleado[t].toUpperCase();
+                colsEmpList.add(tipoUpper + " (N/S)");
+                if (tieneNombreEmpleado[t]) colsEmpList.add(tipoUpper + " (Nombre)");
+            }
+            colsEmpList.add("COMENTARIO");
+            final int comentarioCol = colsEmpList.size() - 1;
+            final int COLS_EMPLEADOS = colsEmpList.size();
+
+            // ── Columnas de la tabla de EQUIPAMIENTO DE OFICINA ──
+            final String[] colsOfi = {"TIPO", "NÚMERO DE SERIE", "NOMBRE", "IP"};
+            final int COLS_EQUIPO = colsOfi.length;
+
+            final int TOTAL_COLS = Math.max(COLS_EMPLEADOS, COLS_EQUIPO);
+
+            int rowNum = 0;
+
+            Row rT = sheet.createRow(rowNum++); rT.setHeightInPoints(30);
             Cell cT = rT.createCell(0); cT.setCellValue(rel.getNombre()); cT.setCellStyle(sTitulo);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, TOTAL_COLS - 1));
+            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
-            Row rF = sheet.createRow(1); rF.setHeightInPoints(15);
+            Row rF = sheet.createRow(rowNum++); rF.setHeightInPoints(15);
             Cell cF = rF.createCell(0);
             cF.setCellValue("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
             cF.setCellStyle(sMeta);
-            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, TOTAL_COLS - 1));
-
-            sheet.createRow(2).setHeightInPoints(8);
-
-            int rowNum = 3;
-
-            // ───────────── EMPLEADOS ─────────────
-            Row rSecEmp = sheet.createRow(rowNum++); rSecEmp.setHeightInPoints(18);
-            Cell cSecEmp = rSecEmp.createCell(0);
-            cSecEmp.setCellValue("EMPLEADOS"); cSecEmp.setCellStyle(sSeccion);
             sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
-            Row rHEmp = sheet.createRow(rowNum++); rHEmp.setHeightInPoints(28);
-            String[] colsEmp = {
-                    "OFICINA", "EMPLEADO",
-                    "CPU (N/S)", "CPU (Nombre)",
-                    "MONITOR (N/S)", "MONITOR (Nombre)",
-                    "TELÉFONO IP (N/S)", "TELÉFONO IP (Nombre)",
-                    "CÁMARA (N/S)", "CÁMARA (Nombre)",
-                    "FIRMA DIGITAL (N/S)", "FIRMA DIGITAL (Nombre)",
-                    "LECTOR ÓPTICO (N/S)", "LECTOR ÓPTICO (Nombre)",
-                    "COMENTARIO"
-            };
-            for (int i = 0; i < colsEmp.length; i++) {
-                Cell cell = rHEmp.createCell(i); cell.setCellValue(colsEmp[i]); cell.setCellStyle(sHeader);
-            }
+            sheet.createRow(rowNum++).setHeightInPoints(8);
 
-            int z = 0;
             for (Oficina oficina : rel.getOficinas()) {
-                for (Empleado emp : oficina.getEmpleados()) {
-                    Row row = sheet.createRow(rowNum++);
-                    row.setHeight((short) -1); // auto-altura
-                    XSSFCellStyle est = (z % 2 == 0) ? sCelda : sCeldaZ;
 
-                    Cell cOficina = row.createCell(0);
-                    cOficina.setCellValue(oficina.getNombre());
-                    cOficina.setCellStyle(sOficina);
+                // ── Barra de título de la OFICINA (ocupa todo el ancho) ──
+                Row rOfi = sheet.createRow(rowNum++); rOfi.setHeightInPoints(24);
+                Cell cOfi = rOfi.createCell(0);
+                cOfi.setCellValue(oficina.getNombre());
+                cOfi.setCellStyle(sOficinaTitulo);
+                for (int i = 1; i < TOTAL_COLS; i++) {
+                    Cell relleno = rOfi.createCell(i);
+                    relleno.setCellStyle(sOficinaTitulo);
+                }
+                sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
-                    Cell cNombre = row.createCell(1);
-                    cNombre.setCellValue(emp.getNombre()
-                            + (emp.getCargo() != null && !emp.getCargo().isBlank() ? "  ·  " + emp.getCargo() : ""));
-                    cNombre.setCellStyle(sEmpleado);
+                List<Empleado> empleados = oficina.getEmpleados();
+                List<EquipoOficina> equipos = oficina.getEquiposOficina();
 
-                    String[] tipos = {"CPU", "Monitor", "Teléfono IP", "Cámara", "Firma digital", "Lector Optico"};
-                    int col = 2;
-                    for (String tipo : tipos) {
-                        Cell cSerie = row.createCell(col++);
-                        cSerie.setCellValue(buildEquipoSerieText(emp, tipo));
-                        cSerie.setCellStyle(est);
-
-                        Cell cNombreEq = row.createCell(col++);
-                        cNombreEq.setCellValue(buildEquipoNombreText(emp, tipo));
-                        cNombreEq.setCellStyle(est);
+                // ── Tabla de EMPLEADOS de esta oficina ──
+                if (!empleados.isEmpty()) {
+                    Row rHEmp = sheet.createRow(rowNum++); rHEmp.setHeightInPoints(26);
+                    for (int i = 0; i < colsEmpList.size(); i++) {
+                        Cell cell = rHEmp.createCell(i); cell.setCellValue(colsEmpList.get(i)); cell.setCellStyle(sHeader);
                     }
 
-                    String comentario = emp.getComentario();
-                    Cell cCom = row.createCell(14);
-                    cCom.setCellValue(comentario != null ? comentario : "");
-                    cCom.setCellStyle((comentario != null && !comentario.isBlank()) ? sComentario : est);
-                    z++;
+                    int z = 0;
+                    for (Empleado emp : empleados) {
+                        Row row = sheet.createRow(rowNum++);
+                        row.setHeight((short) -1);
+                        XSSFCellStyle est = (z % 2 == 0) ? sCelda : sCeldaZ;
+
+                        Cell cNombre = row.createCell(0);
+                        cNombre.setCellValue(emp.getNombre()
+                                + (emp.getCargo() != null && !emp.getCargo().isBlank() ? "  ·  " + emp.getCargo() : ""));
+                        cNombre.setCellStyle(sEmpleado);
+
+                        int col = 1;
+                        for (int t = 0; t < tiposEmpleado.length; t++) {
+                            String tipo = tiposEmpleado[t];
+
+                            Cell cSerie = row.createCell(col++);
+                            cSerie.setCellValue(buildEquipoSerieText(emp, tipo));
+                            cSerie.setCellStyle(est);
+
+                            if (tieneNombreEmpleado[t]) {
+                                Cell cNombreEq = row.createCell(col++);
+                                cNombreEq.setCellValue(buildEquipoNombreText(emp, tipo));
+                                cNombreEq.setCellStyle(est);
+                            }
+                        }
+
+                        String comentario = emp.getComentario();
+                        Cell cCom = row.createCell(comentarioCol);
+                        cCom.setCellValue(comentario != null ? comentario : "");
+                        cCom.setCellStyle((comentario != null && !comentario.isBlank()) ? sComentario : est);
+                        z++;
+                    }
+                } else {
+                    Row rVacio = sheet.createRow(rowNum++);
+                    Cell cVacio = rVacio.createCell(0);
+                    cVacio.setCellValue("Sin empleados cargados");
+                    cVacio.setCellStyle(sMeta);
                 }
-            }
 
-            sheet.createRow(rowNum++).setHeightInPoints(10);
+                // ── Sub-sección EQUIPAMIENTO DE OFICINA (impresoras/escáneres) ──
+                if (!equipos.isEmpty()) {
+                    sheet.createRow(rowNum++).setHeightInPoints(4);
 
-            // ───────────── EQUIPAMIENTO DE OFICINA ─────────────
-            Row rSecOfi = sheet.createRow(rowNum++); rSecOfi.setHeightInPoints(18);
-            Cell cSecOfi = rSecOfi.createCell(0);
-            cSecOfi.setCellValue("EQUIPAMIENTO DE OFICINA"); cSecOfi.setCellStyle(sSeccion);
-            sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
+                    Row rSub = sheet.createRow(rowNum++); rSub.setHeightInPoints(16);
+                    Cell cSub = rSub.createCell(0);
+                    cSub.setCellValue("Equipamiento de oficina");
+                    cSub.setCellStyle(sSubSeccion);
+                    for (int i = 1; i < TOTAL_COLS; i++) {
+                        Cell relleno = rSub.createCell(i);
+                        relleno.setCellStyle(sSubSeccion);
+                    }
+                    sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, TOTAL_COLS - 1));
 
-            Row rHOfi = sheet.createRow(rowNum++); rHOfi.setHeightInPoints(22);
-            String[] colsOfi = {"OFICINA", "TIPO", "NÚMERO DE SERIE", "NOMBRE"};
-            for (int i = 0; i < colsOfi.length; i++) {
-                Cell cell = rHOfi.createCell(i); cell.setCellValue(colsOfi[i]); cell.setCellStyle(sHeader);
-            }
+                    Row rHOfi = sheet.createRow(rowNum++); rHOfi.setHeightInPoints(20);
+                    for (int i = 0; i < colsOfi.length; i++) {
+                        Cell cell = rHOfi.createCell(i); cell.setCellValue(colsOfi[i]); cell.setCellStyle(sHeader);
+                    }
 
-            int zo = 0;
-            for (Oficina oficina : rel.getOficinas()) {
-                for (EquipoOficina eq : oficina.getEquiposOficina()) {
-                    Row row = sheet.createRow(rowNum++);
-                    row.setHeight((short) -1);
-                    XSSFCellStyle est = (zo % 2 == 0) ? sCelda : sCeldaZ;
+                    int zo = 0;
+                    for (EquipoOficina eq : equipos) {
+                        Row row = sheet.createRow(rowNum++);
+                        row.setHeight((short) -1);
+                        XSSFCellStyle est = (zo % 2 == 0) ? sCelda : sCeldaZ;
 
-                    Cell c0 = row.createCell(0); c0.setCellValue(oficina.getNombre()); c0.setCellStyle(sOficina);
-                    Cell c1 = row.createCell(1); c1.setCellValue(eq.getTipo()); c1.setCellStyle(est);
-                    Cell c2 = row.createCell(2); c2.setCellValue(eq.getNumeroSerie()); c2.setCellStyle(est);
-                    Cell c3 = row.createCell(3); c3.setCellValue(eq.getNombre() != null ? eq.getNombre() : ""); c3.setCellStyle(est);
-                    zo++;
+                        Cell c0 = row.createCell(0); c0.setCellValue(eq.getTipo()); c0.setCellStyle(est);
+                        Cell c1 = row.createCell(1); c1.setCellValue(eq.getNumeroSerie()); c1.setCellStyle(est);
+                        Cell c2 = row.createCell(2); c2.setCellValue(eq.getNombre() != null ? eq.getNombre() : ""); c2.setCellStyle(est);
+                        Cell c3 = row.createCell(3); c3.setCellValue(eq.getIp() != null ? eq.getIp() : ""); c3.setCellStyle(est);
+                        zo++;
+                    }
                 }
+
+                // ── Separador entre oficinas ──
+                sheet.createRow(rowNum++).setHeightInPoints(10);
             }
 
             for (int i = 0; i < TOTAL_COLS; i++) {
@@ -345,8 +376,7 @@ public class ExportService {
                 sheet.setColumnWidth(i, sheet.getColumnWidth(i) + 1200);
             }
             sheet.setColumnWidth(0, Math.max(sheet.getColumnWidth(0), 5000));
-            sheet.setColumnWidth(1, sheet.getColumnWidth(1) + 2000);
-            sheet.setColumnWidth(14, Math.max(sheet.getColumnWidth(14), 9000));
+            sheet.setColumnWidth(comentarioCol, Math.max(sheet.getColumnWidth(comentarioCol), 9000));
 
             wb.write(out);
             return out.toByteArray();
